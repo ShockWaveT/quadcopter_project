@@ -1,0 +1,2 @@
+gy87_module.c:22:8:gyro_init	24	static
+gy87_module.c:39:8:gyro_measurement_read	24	static

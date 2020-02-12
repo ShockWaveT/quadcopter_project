@@ -1,0 +1,8 @@
+st-flash upload
+------------------------
+st-flash write ./IMU_project.binary 0x8000000
+
+
+st-link upload
+------------------------
+ST-LINK_CLI.exe -c SWD -p "D:\projects\stm32\drone_project\IMU_project\Debug\IMU_project.bin" 0x08000000 -Rst

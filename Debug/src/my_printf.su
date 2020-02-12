@@ -1,0 +1,5 @@
+my_printf.c:13:13:uart_putc	16	static
+my_printf.c:19:13:uart_puts	24	static
+my_printf.c:49:13:xtoa	24	static
+my_printf.c:65:13:puth	16	static
+my_printf.c:71:6:uart_printf	24	static
