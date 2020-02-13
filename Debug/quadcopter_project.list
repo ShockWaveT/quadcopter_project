@@ -31,13 +31,13 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   CONTENTS, READONLY, DEBUGGING
  13 .debug_line   000031f1  00000000  00000000  00028870  2**0
                   CONTENTS, READONLY, DEBUGGING
- 14 .debug_str    000027cf  00000000  00000000  0002ba61  2**0
+ 14 .debug_str    000027d4  00000000  00000000  0002ba61  2**0
                   CONTENTS, READONLY, DEBUGGING
- 15 .comment      0000007c  00000000  00000000  0002e230  2**0
+ 15 .comment      0000007c  00000000  00000000  0002e235  2**0
                   CONTENTS, READONLY
- 16 .debug_frame  000026e0  00000000  00000000  0002e2ac  2**2
+ 16 .debug_frame  000026e0  00000000  00000000  0002e2b4  2**2
                   CONTENTS, READONLY, DEBUGGING
- 17 .stabstr      0000003f  00000000  00000000  0003098c  2**0
+ 17 .stabstr      0000003f  00000000  00000000  00030994  2**0
                   CONTENTS, READONLY, DEBUGGING
 
 Disassembly of section .text:
@@ -3817,10 +3817,10 @@ int8_t gyro_measurement_read(int16_t* gyroBuffer)
  800185a:	bd80      	pop	{r7, pc}
 
 0800185c <I2C_LowLevel_Init>:
-#include "timer_config.h"
-#include "i2c_comm.h"
-#include "small_printf.h"
-
+ * @param ClockSpeed Bus communication frequency in Hz
+ * @param OwnAddress MCU I2C address
+ * @return none.
+ */
 void I2C_LowLevel_Init(uint32_t ClockSpeed, uint8_t OwnAddress)
 {
  800185c:	b580      	push	{r7, lr}
@@ -3900,10 +3900,10 @@ void I2C_LowLevel_Init(uint32_t ClockSpeed, uint8_t OwnAddress)
  80018d4:	40005400 	.word	0x40005400
 
 080018d8 <i2c_slave_mem_read>:
-
-	return data;
-}
-
+ * @param bytesNum number of bytes to read from slave.
+ * @return 0 on success, -1 on timeout.
+ *
+ */
 int8_t i2c_slave_mem_read(uint8_t slaveAddr, uint8_t registerAddr, uint8_t* writeBuffer, uint8_t bytesNum)
 {
  80018d8:	b590      	push	{r4, r7, lr}
@@ -4142,8 +4142,11 @@ int8_t i2c_slave_mem_read(uint8_t slaveAddr, uint8_t registerAddr, uint8_t* writ
  8001a5c:	00030040 	.word	0x00030040
 
 08001a60 <i2c_slave_mem_write>:
-
-int8_t i2c_slave_mem_write(uint8_t slaveAddr, uint8_t registerAddr, uint8_t writedata)
+ * @param writedata data to be written to the slave register.
+ * @return 0 on success, -1 on timeout.
+ *
+ */
+int8_t i2c_slave_mem_write(uint8_t slaveAddr, uint8_t registerAddr, uint8_t writeData)
 {
  8001a60:	b580      	push	{r7, lr}
  8001a62:	b082      	sub	sp, #8
@@ -4235,7 +4238,7 @@ int8_t i2c_slave_mem_write(uint8_t slaveAddr, uint8_t registerAddr, uint8_t writ
  8001af8:	d0f0      	beq.n	8001adc <i2c_slave_mem_write+0x7c>
 	}
 
-	I2C_SendData(I2C1,writedata);
+	I2C_SendData(I2C1,writeData);
  8001afa:	797b      	ldrb	r3, [r7, #5]
  8001afc:	4619      	mov	r1, r3
  8001afe:	480e      	ldr	r0, [pc, #56]	; (8001b38 <i2c_slave_mem_write+0xd8>)
@@ -4264,11 +4267,7 @@ int8_t i2c_slave_mem_write(uint8_t slaveAddr, uint8_t registerAddr, uint8_t writ
  8001b24:	2101      	movs	r1, #1
  8001b26:	4804      	ldr	r0, [pc, #16]	; (8001b38 <i2c_slave_mem_write+0xd8>)
  8001b28:	f7ff f814 	bl	8000b54 <I2C_GenerateSTOP>
-//	while (!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_BYTE_TRANSMITTED))
-//	{
-//			if(timeout_alarm_status_check() == 1)
-//				return -1;
-//	}
+
 	return 0;
  8001b2c:	2300      	movs	r3, #0
 }

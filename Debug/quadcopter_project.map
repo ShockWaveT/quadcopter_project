@@ -1908,7 +1908,7 @@ OUTPUT(quadcopter_project.elf elf32-littlearm)
  .debug_line    0x00002cab      0x243 src\system_stm32f10x.o
  .debug_line    0x00002eee      0x303 src\timer_config.o
 
-.debug_str      0x00000000     0x27cf
+.debug_str      0x00000000     0x27d4
  .debug_str     0x00000000      0x3ed Libraries\STM32F10x_StdPeriph_Driver\src\misc.o
                                 0x43a (size before relaxing)
  .debug_str     0x000003ed      0x393 Libraries\STM32F10x_StdPeriph_Driver\src\stm32f10x_gpio.o
@@ -1923,17 +1923,17 @@ OUTPUT(quadcopter_project.elf elf32-littlearm)
                                 0x70c (size before relaxing)
  .debug_str     0x00001fb1       0x84 src\gy87_module.o
                                 0x25a (size before relaxing)
- .debug_str     0x00002035       0xc3 src\i2c_comm.o
+ .debug_str     0x00002035       0xc8 src\i2c_comm.o
                                 0x4c6 (size before relaxing)
- .debug_str     0x000020f8       0xb2 src\main.o
+ .debug_str     0x000020fd       0xb2 src\main.o
                                 0x4af (size before relaxing)
- .debug_str     0x000021aa       0x81 src\small_printf.o
+ .debug_str     0x000021af       0x81 src\small_printf.o
                                 0x2c2 (size before relaxing)
- .debug_str     0x0000222b       0xa6 src\stm32f1xx_it.o
+ .debug_str     0x00002230       0xa6 src\stm32f1xx_it.o
                                 0x25b (size before relaxing)
- .debug_str     0x000022d1       0x57 src\system_stm32f10x.o
+ .debug_str     0x000022d6       0x57 src\system_stm32f10x.o
                                 0x322 (size before relaxing)
- .debug_str     0x00002328      0x4a7 src\timer_config.o
+ .debug_str     0x0000232d      0x4a7 src\timer_config.o
                                 0xa55 (size before relaxing)
 
 .comment        0x00000000       0x7c

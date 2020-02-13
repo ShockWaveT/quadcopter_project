@@ -1,8 +1,8 @@
 /*
  * i2c_comm.c
  *
- *  Created on: 09-Feb-2020
- *      Author: ASUS
+ * Created on: 09-Feb-2020
+ * Author: Arun
  */
 #include "stm32f10x.h"
 #include "stm32f10x_rcc.h"
@@ -12,6 +12,14 @@
 #include "i2c_comm.h"
 #include "small_printf.h"
 
+
+/**
+ * Initializes the I2C peripheral.
+ *
+ * @param ClockSpeed Bus communication frequency in Hz
+ * @param OwnAddress MCU I2C address
+ * @return none.
+ */
 void I2C_LowLevel_Init(uint32_t ClockSpeed, uint8_t OwnAddress)
 {
 	I2C_InitTypeDef  I2C_InitStructure;
@@ -41,6 +49,14 @@ void I2C_LowLevel_Init(uint32_t ClockSpeed, uint8_t OwnAddress)
 	I2C_Init(I2C1, &I2C_InitStructure);
 }
 
+/**
+ * reads a register of the slave device. only works on slave devices
+ * with register addresses not longer than 8 bits.
+ *
+ * @param slaveAddre slave address.
+ * @param registerAddr adress of the slave register to be read.
+ * @return none.
+ */
 uint8_t i2c_register_read(uint8_t slaveAddr, uint8_t registerAddr)
 {
 	uint8_t data;
@@ -108,6 +124,16 @@ uint8_t i2c_register_read(uint8_t slaveAddr, uint8_t registerAddr)
 	return data;
 }
 
+/**
+ * Reads data from the slave.
+ *
+ * @param slaveAddr slave address.
+ * @param registerAddr starting memory location of slave to start reading from.
+ * @param writeBuffer pointer to the buffer to hold the read data.
+ * @param bytesNum number of bytes to read from slave.
+ * @return 0 on success, -1 on timeout.
+ *
+ */
 int8_t i2c_slave_mem_read(uint8_t slaveAddr, uint8_t registerAddr, uint8_t* writeBuffer, uint8_t bytesNum)
 {
 	uint8_t i;
@@ -177,7 +203,16 @@ int8_t i2c_slave_mem_read(uint8_t slaveAddr, uint8_t registerAddr, uint8_t* writ
 	return 0;
 }
 
-int8_t i2c_slave_mem_write(uint8_t slaveAddr, uint8_t registerAddr, uint8_t writedata)
+/**
+ * write data to slave registers/memory.
+ *
+ * @param slaveAddr slave address.
+ * @param registerAddr starting memory location of slave to start writing to.
+ * @param writedata data to be written to the slave register.
+ * @return 0 on success, -1 on timeout.
+ *
+ */
+int8_t i2c_slave_mem_write(uint8_t slaveAddr, uint8_t registerAddr, uint8_t writeData)
 {
 	timeout_alarm_set(20);
 
@@ -202,7 +237,7 @@ int8_t i2c_slave_mem_write(uint8_t slaveAddr, uint8_t registerAddr, uint8_t writ
 				return -1;
 	}
 
-	I2C_SendData(I2C1,writedata);
+	I2C_SendData(I2C1,writeData);
 	while (!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_BYTE_TRANSMITTED))
 	{
 			if(timeout_alarm_status_check() == 1)
@@ -211,10 +246,5 @@ int8_t i2c_slave_mem_write(uint8_t slaveAddr, uint8_t registerAddr, uint8_t writ
 
 	I2C_GenerateSTOP(I2C1,ENABLE);
 
-//	while (!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_BYTE_TRANSMITTED))
-//	{
-//			if(timeout_alarm_status_check() == 1)
-//				return -1;
-//	}
 	return 0;
 }
