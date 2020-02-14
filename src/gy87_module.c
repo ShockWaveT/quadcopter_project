@@ -19,7 +19,7 @@
  * 0x10: 1000 degrees/second, error: 26
  * 0x18: 2000 degrees/second, error: 13
  */
-int8_t gyro_init(uint8_t sensitivity)
+int8_t gyro_init(uint8_t fullScaleRange)
 {
 	int8_t returnCode=0;
 
@@ -28,7 +28,7 @@ int8_t gyro_init(uint8_t sensitivity)
 	if(returnCode == -1)
 		return -1;
 
-	returnCode = i2c_slave_mem_write(MPU6050_ID, 0x1B, sensitivity);
+	returnCode = i2c_slave_mem_write(MPU6050_ID, 0x1B, fullScaleRange);
 	if(returnCode == -1)
 		return -1;
 	uart_printf("2\n");
