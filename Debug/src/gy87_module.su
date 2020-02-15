@@ -1,2 +1,3 @@
-gy87_module.c:22:8:gyro_init	24	static
-gy87_module.c:39:8:gyro_measurement_read	24	static
+gy87_module.c:26:8:mpu6050_init	24	static
+gy87_module.c:59:8:gyro_measurement_read	24	static
+gy87_module.c:82:8:accel_measurement_read	24	static

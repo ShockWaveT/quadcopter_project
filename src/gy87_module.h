@@ -11,20 +11,27 @@
 #define MPU6050_ID 0x68
 #define BMP180_ID 0x77
 
-/* full scale range defines for gyro_init function*/
-#define FS_SEL0_GYRO	0x00 /*250 degrees per second*/
-#define FS_SEL1_GYRO	0x08 /*500 degrees per second*/
-#define FS_SEL2_GYRO	0x10 /*1000 degrees per second*/
-#define FS_SEL3_GYRO	0x18 /*2000 degrees per second*/
+/* gyro/accelerometer full scale range defines for mpu6050_init function*/
+#define FS_SEL0	0x00 /* 250 degrees per second/2g */
+#define FS_SEL1	0x08 /* 500 degrees per second/4g */
+#define FS_SEL2	0x10 /* 1000 degrees per second/8g */
+#define FS_SEL3	0x18 /* 2000 degrees per second/16g */
 
-/* sensitivity scale factors of gyro*/
-#define FS_SEL0_SCALE_GYRO	131
-#define FS_SEL1_SCALE_GYRO	65.5
-#define FS_SEL2_SCALE_GYRO	32.8
-#define FS_SEL3_SCALE_GYRO	16.4
+/* sensitivity scale factors of gyro */
+#define FS_SEL0_GYRO_SCALE	131
+#define FS_SEL1_GYRO_SCALE	65.5
+#define FS_SEL2_GYRO_SCALE	32.8
+#define FS_SEL3_GYRO_SCALE	16.4
 
-int8_t gyro_init(uint8_t fullScaleRange);
+/* sensitivity scale factors of accelerometer */
+#define FS_SEL0_ACCEL_SCALE	16384
+#define FS_SEL1_ACCEL_SCALE	8192
+#define FS_SEL2_ACCEL_SCALE	4096
+#define FS_SEL3_ACCEL_SCALE	2048
+
+int8_t mpu6050_init(uint8_t gyroFullScaleRange, uint8_t accelFullScaleRange);
 int8_t gyro_measurement_read(int16_t* gyroBuffer);
+int8_t accel_measurement_read(int16_t* accelBuffer);
 
 
 #endif /* GY87_MODULE_H_ */

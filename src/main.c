@@ -16,6 +16,7 @@
 #include "gy87_module.h"
 
 int16_t gyroData[3];
+int16_t accelData[3];
 int32_t gyroSum=0;
 int32_t gyroAngle;
 uint32_t previousTime=0;
@@ -91,32 +92,39 @@ int main(void)
 	uart_console_init(9600);
 	delay_ms(2000);
 	uart_printf("start...\n");
-	if(gyro_init(0x10)<0)
+	if(mpu6050_init(FS_SEL2, FS_SEL1)<0)
 	{
-		uart_printf("fail1...\n");
+		uart_printf("fail1\n");
 		while(1);
 	}
 
 
     while(1)
     {
-    	if(gyro_measurement_read(gyroData)<0)
+
+
+
+
+//    	if(gyro_measurement_read(gyroData)<0)
+//    		uart_printf("fail2...\n");
+//    	currentTime = millis();
+//    	elapsed_time_in_seconds = (1000/(currentTime-previousTime));
+//
+//    	calc1 = (gyroData[0]+26)*100000;
+//    	calc2 = elapsed_time_in_seconds*(32.8f);
+//    	gyroSum = (calc1/calc2)+gyroSum;
+//    	previousTime = currentTime;
+//    	k++;
+//    	if(k==1000)
+//    	{
+//    		uart_printf("x_angle: %d\n",(int32_t)(gyroSum/100000));
+//    		k=0;
+//    	}
+
+    	if(accel_measurement_read(accelData)<0)
     		uart_printf("fail2...\n");
-    	currentTime = millis();
-    	elapsed_time_in_seconds = (1000/(currentTime-previousTime));
-
-    	calc1 = (gyroData[0]+26)*100000;
-    	calc2 = elapsed_time_in_seconds*(32.8f);
-    	gyroSum = (calc1/calc2)+gyroSum;
-    	previousTime = currentTime;
-
-    	k++;
-    	if(k==1000)
-    	{
-    		uart_printf("x_angle: %d\n",(int32_t)(gyroSum/100000));
-//    		uart_printf("calc1: %d\n", (int32_t)calc1);
-    		k=0;
-    	}
+    	uart_printf("accel data %d\n", accelData[2]);
+    	delay_ms(250);
 
 //    	motor_pwm_speed_set(PWM_CHANNEL4, 5);
 //    	delay_ms(1000);
