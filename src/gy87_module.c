@@ -22,6 +22,12 @@
  * 0x10: 1000 degrees/second, error: 26
  * 0x18: 2000 degrees/second, error: 13
  *
+ * accelerometer
+ * 0x00:  error:
+ * 0x08:  error: x-280, y-60, z-7380
+ * 0x10:  error:
+ * 0x18:  error:
+ *
  */
 int8_t mpu6050_init(uint8_t gyroFullScaleRange, uint8_t accelFullScaleRange)
 {

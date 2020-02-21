@@ -5,7 +5,7 @@
  * Author: Arun
  */
 
-
+#include <math.h>
 #include "stm32f10x.h"
 #include "stm32f10x_rcc.h"
 #include "stm32f10x_gpio.h"
@@ -14,66 +14,59 @@
 #include "small_printf.h"
 #include "timer_config.h"
 #include "gy87_module.h"
+#include "uart_comm.h"
+#include "debug.h"
+
+/* Kernel includes. */
+#include "FreeRTOS.h"
+#include "task.h"
+#include "queue.h"
+#include "timers.h"
 
 int16_t gyroData[3];
 int16_t accelData[3];
 int32_t gyroSum=0;
 int32_t gyroAngle;
+double accel_x;
+double accel_y;
+double accel_z;
+double accelAngle;
+
 uint32_t previousTime=0;
 uint32_t currentTime=0;
 uint32_t elapsed_time_in_seconds=0;
 
-void uart_console_init(uint32_t baudRate)
+
+void test_task(void *pvParameters)
 {
-	GPIO_InitTypeDef GPIO_InitStructure;
-	USART_InitTypeDef USART_InitStructure;
-
-	/* Enable peripheral clocks for USART1 on GPIOA */
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1 | RCC_APB2Periph_GPIOA |
-						   RCC_APB2Periph_AFIO, ENABLE);
-
-	/* Configure PA9 and PA10 as USART1 TX/RX */
-
-	/* PA9 = alternate function push/pull output */
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_9;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AF_PP;
-	GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-	/* PA10 = floating input */
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_10;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IN_FLOATING;
-	GPIO_Init(GPIOA, &GPIO_InitStructure);
-
-	/* Configure and initialize usart... */
-	USART_InitStructure.USART_BaudRate = baudRate;
-	USART_InitStructure.USART_WordLength = USART_WordLength_8b;
-	USART_InitStructure.USART_StopBits = USART_StopBits_1;
-	USART_InitStructure.USART_Parity = USART_Parity_No;
-	USART_InitStructure.USART_HardwareFlowControl = USART_HardwareFlowControl_None;
-	USART_InitStructure.USART_Mode = USART_Mode_Rx | USART_Mode_Tx;
-
-	USART_Init(USART1, &USART_InitStructure);
-
-	/* Enable USART1 */
-	USART_Cmd(USART1, ENABLE);
+	while(1)
+	{
+		uart_printf("testing task\n");
+		vTaskDelay(1000/portTICK_PERIOD_MS);
+	}
 }
 
-void debug_led_init(void)
+void drone_init_task(void *pvParameters)
 {
-	GPIO_InitTypeDef GPIO_InitStructure;
-
-	// Enable GPIO clock
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_AFIO, ENABLE);
-	RCC_APB2PeriphClockCmd(RCC_APB2Periph_GPIOC, ENABLE);
-
-	// Configure pin as output push-pull (LED)
-	GPIO_InitStructure.GPIO_Pin = GPIO_Pin_8;
-	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;
-	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
-	GPIO_Init(GPIOC, &GPIO_InitStructure);
+	timer3_init();
+	motors_pwm_init();
+	I2C_LowLevel_Init(400000, 0x38);
+	debug_led_init();
+	uart_console_init(9600);
+	/*safety delay for mpu6050 to powerup*/
+	vTaskDelay(500/portTICK_PERIOD_MS);
+	if(mpu6050_init(FS_SEL2, FS_SEL1)<0)
+	{
+		uart_printf("mpu6050 init failed.\n");
+		while(1);
+	}
+	else
+	{
+		uart_printf("drone init complete.\n");
+		xTaskCreate(test_task, "test_task", 1000, NULL, 0, NULL );
+		vTaskDelete(NULL);
+	}
 }
-
 
 int main(void)
 {
@@ -84,20 +77,9 @@ int main(void)
 	int32_t calc1=0;
 	int32_t calc2=0;
 
-
-	timer3_init();
-	motors_pwm_init();
-	I2C_LowLevel_Init(400000, 0x38);
-	debug_led_init();
-	uart_console_init(9600);
-	delay_ms(2000);
-	uart_printf("start...\n");
-	if(mpu6050_init(FS_SEL2, FS_SEL1)<0)
-	{
-		uart_printf("fail1\n");
-		while(1);
-	}
-
+	xTaskCreate(drone_init_task, "drone_init_task", 500, NULL, 0, NULL );
+	vTaskStartScheduler();
+	while(1);
 
     while(1)
     {
@@ -123,8 +105,17 @@ int main(void)
 
     	if(accel_measurement_read(accelData)<0)
     		uart_printf("fail2...\n");
-    	uart_printf("accel data %d\n", accelData[2]);
-    	delay_ms(250);
+//    	accel_x = (double)(accelData[0]-280)/(double)FS_SEL1_ACCEL_SCALE;
+//    	accel_y = (double)(accelData[1]-60)/(double)FS_SEL1_ACCEL_SCALE;
+//    	accel_z = (double)(accelData[2]-7380)/(double)FS_SEL1_ACCEL_SCALE;
+    	accel_x = (double)(accelData[0]-280);
+		accel_y = (double)(accelData[1]-60);
+		accel_z = (double)(accelData[2]);
+
+		accelAngle = atan( accel_x/sqrt((accel_z*accel_z)+(accel_y*accel_y)) );
+		uart_printf("accel data %f\n", (accelAngle*180)/3.14);
+//		uart_printf("accel data %f\n", accel_x);
+    	delay_ms(50);
 
 //    	motor_pwm_speed_set(PWM_CHANNEL4, 5);
 //    	delay_ms(1000);
@@ -141,4 +132,45 @@ int main(void)
 //    	GPIO_WriteBit(GPIOC, GPIO_Pin_8, gpio_val);
 
     }
+}
+
+void vApplicationMallocFailedHook( void )
+{
+	/* Called if a call to pvPortMalloc() fails because there is insufficient
+	free memory available in the FreeRTOS heap.  pvPortMalloc() is called
+	internally by FreeRTOS API functions that create tasks, queues, software
+	timers, and semaphores.  The size of the FreeRTOS heap is set by the
+	configTOTAL_HEAP_SIZE configuration constant in FreeRTOSConfig.h. */
+	for( ;; );
+}
+/*-----------------------------------------------------------*/
+
+void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTaskName )
+{
+	( void ) pcTaskName;
+	( void ) pxTask;
+
+	/* Run time stack overflow checking is performed if
+	configconfigCHECK_FOR_STACK_OVERFLOW is defined to 1 or 2.  This hook
+	function is called if a stack overflow is detected. */
+	for( ;; );
+}
+/*-----------------------------------------------------------*/
+
+void vApplicationIdleHook( void )
+{
+volatile size_t xFreeStackSpace;
+
+	/* This function is called on each cycle of the idle task.  In this case it
+	does nothing useful, other than report the amout of FreeRTOS heap that
+	remains unallocated. */
+	xFreeStackSpace = xPortGetFreeHeapSize();
+
+	if( xFreeStackSpace > 100 )
+	{
+		/* By now, the kernel has allocated everything it is going to, so
+		if there is a lot of heap remaining unallocated then
+		the value of configTOTAL_HEAP_SIZE in FreeRTOSConfig.h can be
+		reduced accordingly. */
+	}
 }
