@@ -33,26 +33,18 @@ int8_t mpu6050_init(uint8_t gyroFullScaleRange, uint8_t accelFullScaleRange)
 {
 	int8_t returnCode=0;
 
-	uart_printf("f1\n");
-
 	/* turn off sleep mode */
 	returnCode = i2c_slave_mem_write(MPU6050_ID, 0x6B, 0);
 	if(returnCode == -1)
 		return -1;
 
-	uart_printf("f2\n");
-
 	returnCode = i2c_slave_mem_write(MPU6050_ID, 0x1B, gyroFullScaleRange);
 	if(returnCode == -1)
 		return -1;
 
-
-
 	returnCode = i2c_slave_mem_write(MPU6050_ID, 0x1C, accelFullScaleRange);
 	if(returnCode == -1)
 		return -1;
-
-
 
 	return 0;
 }
@@ -103,5 +95,42 @@ int8_t accel_measurement_read(int16_t* accelBuffer)
 		return -1;
 }
 
+/**
+ * calculates gyro calibration values to compensate drift.
+ *
+ * @param gyroCalibData_X: gyro X axis calibration return buffer.
+ * @param gyroCalibData_Y: gyro Y axis calibration return buffer.
+ * @param gyroCalibData_Z: gyro Z axis calibration return buffer.
+ *
+ * @retval 0 if success, -1 on failure.
+ *
+ */
+int8_t gyro_do_calibration(double* gyroCalibData_X, double* gyroCalibData_Y, double* gyroCalibData_Z)
+{
+	uint32_t sampleCount=0;
+	int16_t gyroRawData[3];
+
+	*gyroCalibData_X=0;
+	*gyroCalibData_Y=0;
+	*gyroCalibData_Z=0;
+
+	while(sampleCount<200)
+	{
+		if(gyro_measurement_read(gyroRawData)<0)
+			return -1;
+
+		*gyroCalibData_X = (gyroRawData[0]+(*gyroCalibData_X));
+		*gyroCalibData_Y = (gyroRawData[1]+(*gyroCalibData_Y));
+		*gyroCalibData_Z = (gyroRawData[2]+(*gyroCalibData_Z));
+		sampleCount++;
+		delay_ms(25);
+	}
+
+	*gyroCalibData_X = ((*gyroCalibData_X)/200);
+	*gyroCalibData_Y = ((*gyroCalibData_Y)/200);
+	*gyroCalibData_Z = ((*gyroCalibData_Z)/200);
+
+	return 0;
+}
 
 

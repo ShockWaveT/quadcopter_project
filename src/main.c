@@ -17,7 +17,7 @@
 #include "uart_comm.h"
 #include "debug.h"
 
-/* Kernel includes. */
+/* FreeRTOS includes. */
 #include "FreeRTOS.h"
 #include "task.h"
 #include "queue.h"
@@ -25,16 +25,6 @@
 
 int16_t gyroData[3];
 int16_t accelData[3];
-int32_t gyroSum=0;
-int32_t gyroAngle;
-double accel_x;
-double accel_y;
-double accel_z;
-double accelAngle;
-
-uint32_t previousTime=0;
-uint32_t currentTime=0;
-uint32_t elapsed_time_in_seconds=0;
 
 
 void test_task(void *pvParameters)
@@ -43,6 +33,190 @@ void test_task(void *pvParameters)
 	{
 		uart_printf("testing task\n");
 		vTaskDelay(1000/portTICK_PERIOD_MS);
+	}
+}
+
+//void motion_control_task(void *pvParameters)
+//{
+//	double accelRaw_x;
+//	double accelRaw_y;
+//	double accelRaw_z;
+//	double accelAngle_x;
+//	double accelAngle_y;
+//
+//	double gyroSum=0;
+//	int32_t gyroAngle;
+//	double calc1;
+//	double calc2;
+//
+//	uint32_t previousTime=0;
+//	uint32_t currentTime=0;
+//	uint32_t elapsed_time_in_seconds=0;
+//
+//	while(1)
+//	{
+//		if(accel_measurement_read(accelData)<0)
+//			uart_printf("accel read fail\n");
+//
+//		vTaskDelay(25/portTICK_PERIOD_MS);
+//
+//		if(gyro_measurement_read(gyroData)<0)
+//		    uart_printf("gyro read fail\n");
+//
+//		accelRaw_x = (double)(accelData[0]);
+//		accelRaw_y = (double)(accelData[1]);
+//		accelRaw_z = (double)(accelData[2]);
+//		accelAngle_x = atan( accelRaw_x/sqrt((accelRaw_z*accelRaw_z)+(accelRaw_y*accelRaw_y)) );
+//		accelAngle_y = atan( accelRaw_y/sqrt((accelRaw_z*accelRaw_z)+(accelRaw_x*accelRaw_x)) );
+//
+//
+//		currentTime = millis();
+//    	elapsed_time_in_seconds = (1000/(currentTime-previousTime));
+//
+//    	calc1 = gyroData[0]+40;
+//    	calc2 = elapsed_time_in_seconds*(32.8f);
+//    	gyroSum = (calc1/calc2)+gyroSum;
+//    	previousTime = currentTime;
+//
+//
+////		uart_printf("x: %.1f    y: %.1f    z:%.1f \n",
+////				   (accelAngle_x*180)/3.14, (accelAngle_y*180)/3.14, (accelAngle_z*180)/3.14);
+//    	uart_printf("x: %.1f \n",gyroSum);
+////		delay_ms(50);
+//    	vTaskDelay(25/portTICK_PERIOD_MS);
+//	}
+//}
+
+//void motion_control_task(void *pvParameters)
+//{
+//	double accelRaw_x;
+//	double accelRaw_y;
+//	double accelRaw_z;
+//	double accelAngle_x;
+//	double accelAngle_y;
+//
+//	double gyroSum=0;
+//	int32_t gyroAngle;
+//	double calc1;
+//	double calc2;
+//
+//	uint32_t previousTime=0;
+//	uint32_t currentTime=0;
+//	uint32_t elapsed_time_in_seconds=0;
+//
+//	uint8_t caliberateFlag=0;
+//	uint32_t caliberateCount=0;
+//	double caliberateAvg=0;
+//
+//
+//	while(1)
+//	{
+//		if(gyro_measurement_read(gyroData)<0)
+//		    uart_printf("gyro read fail\n");
+//
+//    	if(!caliberateFlag)
+//    	{
+//			if(caliberateCount<200)
+//			{
+//				caliberateAvg = (gyroData[0]+caliberateAvg);
+//				caliberateCount++;
+//			}
+//			else
+//			{
+//				caliberateAvg = (caliberateAvg/200);
+////				if(caliberateAvg<0)
+////					caliberateAvg = caliberateAvg-1;
+////				if(caliberateAvg>0)
+////					caliberateAvg = caliberateAvg+1;
+//				caliberateFlag=1;
+//				uart_printf("Calibration complete: %.1f\n",caliberateAvg);
+//			}
+//    	}
+//
+//    	else if(caliberateFlag)
+//    	{
+//    		currentTime = millis();
+//    		elapsed_time_in_seconds = (1000/(currentTime-previousTime));
+//
+//    		if(elapsed_time_in_seconds!=0)
+//    		{
+//				calc1 = (double)gyroData[0]-caliberateAvg;
+//				calc2 = (double)elapsed_time_in_seconds*(32.8f);
+//				gyroSum = (calc1/calc2)+gyroSum;
+//    		}
+//			previousTime = currentTime;
+//
+////				uart_printf("raw x: %d     x: %.1f \n",gyroData[0], gyroSum);
+//			uart_printf("calc1: %.1f   calc2: %.1f   gyroSum: %.1f\n",calc1, calc2, gyroSum);
+//    	}
+//    	vTaskDelay(50/portTICK_PERIOD_MS);
+//	}
+//}
+
+void motion_control_task(void *pvParameters)
+{
+	double accelRaw_x;
+	double accelRaw_y;
+	double accelRaw_z;
+	double accelAngle_x;
+	double accelAngle_y;
+
+	double gyroSum=0;
+	int32_t gyroAngle;
+	double calc1;
+	double calc2;
+
+	uint32_t previousTime=0;
+	uint32_t currentTime=0;
+	uint32_t elapsed_time_in_seconds=0;
+
+	uint8_t caliberateFlag=0;
+	uint32_t caliberateCount=0;
+	double calibrationValue_X=0;
+	double calibrationValue_Y=0;
+	double calibrationValue_Z=0;
+
+	uint32_t i=0;
+
+
+	while(1)
+	{
+		if(gyro_measurement_read(gyroData)<0)
+		    uart_printf("gyro read fail\n");
+
+    	if(!caliberateFlag)
+    	{
+    		uart_printf("calibration started\n");
+    		if(gyro_do_calibration(&calibrationValue_X, &calibrationValue_Y, &calibrationValue_Z)<0)
+    		{
+    			uart_printf("calibration fail\n");
+    			while(1);
+    		}
+    		caliberateFlag = 1;
+    	}
+
+    	else if(caliberateFlag)
+    	{
+    		currentTime = millis();
+    		elapsed_time_in_seconds = (1000/(currentTime-previousTime));
+
+    		if(elapsed_time_in_seconds!=0)
+    		{
+				calc1 = (double)gyroData[0]-calibrationValue_X;
+				calc2 = (double)elapsed_time_in_seconds*(16.4f);
+				gyroSum = (calc1/calc2)+gyroSum;
+    		}
+			previousTime = currentTime;
+
+//				uart_printf("raw x: %d     x: %.1f \n",gyroData[0], gyroSum);
+			i++;
+			if(i==20)
+			{
+				uart_printf("gyro angle: %.1f\n", gyroSum);
+				i=0;
+			}
+    	}
+    	vTaskDelay(5/portTICK_PERIOD_MS);
 	}
 }
 
@@ -55,7 +229,7 @@ void drone_init_task(void *pvParameters)
 	uart_console_init(9600);
 	/*safety delay for mpu6050 to powerup*/
 	vTaskDelay(500/portTICK_PERIOD_MS);
-	if(mpu6050_init(FS_SEL2, FS_SEL1)<0)
+	if(mpu6050_init(FS_SEL3, FS_SEL1)<0)
 	{
 		uart_printf("mpu6050 init failed.\n");
 		while(1);
@@ -63,21 +237,15 @@ void drone_init_task(void *pvParameters)
 	else
 	{
 		uart_printf("drone init complete.\n");
-		xTaskCreate(test_task, "test_task", 1000, NULL, 0, NULL );
+		vTaskDelay(2000/portTICK_PERIOD_MS);
+		xTaskCreate(motion_control_task, "motion_control_task", 500, NULL, 1, NULL );
 		vTaskDelete(NULL);
 	}
 }
 
 int main(void)
 {
-	uint8_t data=0;
-	uint8_t gpio_val;
-	uint32_t k=0;
-
-	int32_t calc1=0;
-	int32_t calc2=0;
-
-	xTaskCreate(drone_init_task, "drone_init_task", 500, NULL, 0, NULL );
+	xTaskCreate(drone_init_task, "drone_init_task", 200, NULL, 0, NULL );
 	vTaskStartScheduler();
 	while(1);
 
@@ -103,19 +271,6 @@ int main(void)
 //    		k=0;
 //    	}
 
-    	if(accel_measurement_read(accelData)<0)
-    		uart_printf("fail2...\n");
-//    	accel_x = (double)(accelData[0]-280)/(double)FS_SEL1_ACCEL_SCALE;
-//    	accel_y = (double)(accelData[1]-60)/(double)FS_SEL1_ACCEL_SCALE;
-//    	accel_z = (double)(accelData[2]-7380)/(double)FS_SEL1_ACCEL_SCALE;
-    	accel_x = (double)(accelData[0]-280);
-		accel_y = (double)(accelData[1]-60);
-		accel_z = (double)(accelData[2]);
-
-		accelAngle = atan( accel_x/sqrt((accel_z*accel_z)+(accel_y*accel_y)) );
-		uart_printf("accel data %f\n", (accelAngle*180)/3.14);
-//		uart_printf("accel data %f\n", accel_x);
-    	delay_ms(50);
 
 //    	motor_pwm_speed_set(PWM_CHANNEL4, 5);
 //    	delay_ms(1000);
@@ -143,7 +298,6 @@ void vApplicationMallocFailedHook( void )
 	configTOTAL_HEAP_SIZE configuration constant in FreeRTOSConfig.h. */
 	for( ;; );
 }
-/*-----------------------------------------------------------*/
 
 void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTaskName )
 {
@@ -155,7 +309,6 @@ void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTaskName )
 	function is called if a stack overflow is detected. */
 	for( ;; );
 }
-/*-----------------------------------------------------------*/
 
 void vApplicationIdleHook( void )
 {
