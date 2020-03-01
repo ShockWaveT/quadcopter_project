@@ -96,12 +96,9 @@ int8_t accel_measurement_read(int16_t* accelBuffer)
 }
 
 /**
- * calculates gyro calibration values to compensate drift.
+ * calculates gyro calibration values to compensate sensor error.
  *
- * @param gyroCalibData_X: gyro X axis calibration return buffer.
- * @param gyroCalibData_Y: gyro Y axis calibration return buffer.
- * @param gyroCalibData_Z: gyro Z axis calibration return buffer.
- *
+ * @param gyroCalibData: gyro axis calibration values return buffer.
  * @retval 0 if success, -1 on failure.
  *
  */
@@ -123,12 +120,48 @@ int8_t gyro_do_calibration(double* gyroCalibData)
 		gyroCalibData[Y_AXIS_INDEX] = (gyroRawData[Y_AXIS_INDEX]+gyroCalibData[Y_AXIS_INDEX]);
 		gyroCalibData[Z_AXIS_INDEX] = (gyroRawData[Z_AXIS_INDEX]+gyroCalibData[Z_AXIS_INDEX]);
 		sampleCount++;
-		delay_ms(25);
+		delay_ms(15);
 	}
 
 	gyroCalibData[X_AXIS_INDEX] = gyroCalibData[X_AXIS_INDEX]/200;
 	gyroCalibData[Y_AXIS_INDEX] = gyroCalibData[Y_AXIS_INDEX]/200;
 	gyroCalibData[Z_AXIS_INDEX] = gyroCalibData[Z_AXIS_INDEX]/200;
+
+	return 0;
+}
+
+
+/**
+ * calculates accelerometer calibration values to compensate sensor error.
+ *
+ * @param accelCalibData: accelerometer axis calibration values return buffer.
+ * @retval 0 if success, -1 on failure.
+ *
+ */
+int8_t accel_do_calibration(double* accelCalibData)
+{
+	uint32_t sampleCount=0;
+	int16_t accelRawData[3];
+
+	accelCalibData[X_AXIS_INDEX]=0;
+	accelCalibData[Y_AXIS_INDEX]=0;
+	accelCalibData[Z_AXIS_INDEX]=0;
+
+	while(sampleCount<200)
+	{
+		if(accel_measurement_read(accelRawData)<0)
+			return -1;
+
+		accelCalibData[X_AXIS_INDEX] = (accelRawData[X_AXIS_INDEX]+accelCalibData[X_AXIS_INDEX]);
+		accelCalibData[Y_AXIS_INDEX] = (accelRawData[Y_AXIS_INDEX]+accelCalibData[Y_AXIS_INDEX]);
+		accelCalibData[Z_AXIS_INDEX] = (accelRawData[Z_AXIS_INDEX]+accelCalibData[Z_AXIS_INDEX]);
+		sampleCount++;
+		delay_ms(15);
+	}
+
+	accelCalibData[X_AXIS_INDEX] = 0-(accelCalibData[X_AXIS_INDEX]/200);
+	accelCalibData[Y_AXIS_INDEX] = 0-(accelCalibData[Y_AXIS_INDEX]/200);
+	accelCalibData[Z_AXIS_INDEX] = 8192-(accelCalibData[Z_AXIS_INDEX]/200);
 
 	return 0;
 }

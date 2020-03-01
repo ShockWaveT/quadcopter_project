@@ -156,7 +156,15 @@ void test_task(void *pvParameters)
 void motion_control_task(void *pvParameters)
 {
 	double accelAngleValues[3]={0};
+	uint8_t accelCalibFlag=0;
+	double accelCalibVal[3]={0};
+	double squareOfRawAccel_X;
+	double squareOfRawAccel_Y;
+	double squareOfRawAccel_Z;
+
 	double gyroAngleValues[3]={0};
+	uint8_t gyroCalibFlag=0;
+	double gyroCalibVal[3]={0};
 	double calc1;
 	double calc2;
 
@@ -164,31 +172,67 @@ void motion_control_task(void *pvParameters)
 	uint32_t currentTime=0;
 	uint32_t elapsed_time_in_seconds=0;
 
-	uint8_t caliberateFlag=0;
-	double gyroCalibVal[3]={0};
-
 	uint32_t i=0;
 
 
 	while(1)
 	{
-		if(gyro_measurement_read(gyroRawData)<0)
-		    uart_printf("gyro read fail\n");
-
-    	if(!caliberateFlag)
+    	if(!gyroCalibFlag)
     	{
-    		uart_printf("calibration started\n");
+    		uart_printf("gyro calibration started\n");
     		if(gyro_do_calibration(gyroCalibVal)<0)
     		{
-    			uart_printf("calibration fail\n");
+    			uart_printf("gyro calibration fail\n");
     			while(1);
     		}
-    		caliberateFlag = 1;
+    		gyroCalibFlag = 1;
 //    		uart_printf("calib value: %.1f\n", gyroCalibVal[X_AXIS_INDEX]);
     	}
+    	else if(!accelCalibFlag)
+		{
+			uart_printf("accel calibration started\n");
+			if(accel_do_calibration(accelCalibVal)<0)
+			{
+				uart_printf("accel calibration fail\n");
+				while(1);
+			}
+			accelCalibFlag = 1;
+//    		uart_printf("calib value: %.1f\n", gyroCalibVal[X_AXIS_INDEX]);
+		}
 
-    	else if(caliberateFlag)
+    	else if((gyroCalibFlag == 1)&&(accelCalibFlag == 1))
     	{
+    		if(accel_measurement_read(accelRawData)<0)
+    			uart_printf("accel read fail\n");
+
+    		accelRawData[X_AXIS_INDEX] = accelRawData[X_AXIS_INDEX]+accelCalibVal[X_AXIS_INDEX];
+    		accelRawData[Y_AXIS_INDEX] = accelRawData[Y_AXIS_INDEX]+accelCalibVal[Y_AXIS_INDEX];
+    		accelRawData[Z_AXIS_INDEX] = accelRawData[Z_AXIS_INDEX]+accelCalibVal[Z_AXIS_INDEX];
+
+			/*
+			 * This will increase speed of execution since we don't have to calculate
+			 * the squares each data more than once in one iteration. also this increases readability.
+			 */
+			squareOfRawAccel_X = accelRawData[X_AXIS_INDEX]*accelRawData[X_AXIS_INDEX];
+			squareOfRawAccel_Y = accelRawData[Y_AXIS_INDEX]*accelRawData[Y_AXIS_INDEX];
+			squareOfRawAccel_Z = accelRawData[Z_AXIS_INDEX]*accelRawData[Z_AXIS_INDEX];
+
+			accelAngleValues[Y_AXIS_INDEX] = atan(accelRawData[X_AXIS_INDEX] / sqrt((squareOfRawAccel_Y+squareOfRawAccel_Z)) );
+			accelAngleValues[X_AXIS_INDEX] = atan(accelRawData[Y_AXIS_INDEX] / sqrt((squareOfRawAccel_X+squareOfRawAccel_Z)) );
+
+			/* convert radians to degrees */
+			accelAngleValues[X_AXIS_INDEX] = accelAngleValues[X_AXIS_INDEX]*DEGREE_CNVRT_CONST;
+			accelAngleValues[Y_AXIS_INDEX] = accelAngleValues[Y_AXIS_INDEX]*DEGREE_CNVRT_CONST;
+
+			/*
+			 * delay for sampling gyro values and to give a
+			 * delay b/w reads of gyro and accelerometer.
+			 */
+			vTaskDelay(5/portTICK_PERIOD_MS);
+
+			if(gyro_measurement_read(gyroRawData)<0)
+				uart_printf("gyro read fail\n");
+
     		currentTime = millis();
     		elapsed_time_in_seconds = (1000/(currentTime-previousTime));
 
@@ -197,7 +241,7 @@ void motion_control_task(void *pvParameters)
     			calc1 = ((double)elapsed_time_in_seconds)*16.4f;
 
 				calc2 = ((double)gyroRawData[X_AXIS_INDEX])-gyroCalibVal[X_AXIS_INDEX];
-				gyroAngleValues[X_AXIS_INDEX] = (calc1/calc2)+gyroAngleValues[X_AXIS_INDEX];
+				gyroAngleValues[X_AXIS_INDEX] = (calc2/calc1)+gyroAngleValues[X_AXIS_INDEX];
 
 				calc2 = (double)gyroRawData[Y_AXIS_INDEX]-gyroCalibVal[Y_AXIS_INDEX];
 				gyroAngleValues[Y_AXIS_INDEX] = (calc2/calc1)+gyroAngleValues[Y_AXIS_INDEX];
@@ -208,11 +252,11 @@ void motion_control_task(void *pvParameters)
 			i++;
 			if(i==20)
 			{
-				uart_printf("gyro angle: %.1f\n", gyroAngleValues[Y_AXIS_INDEX]);
+				uart_printf("gyro: %.1f  accel: %.1f\n", gyroAngleValues[X_AXIS_INDEX], accelAngleValues[X_AXIS_INDEX]);
+//				uart_printf("x: %d  y: %d  z: %d\n", accelRawData[X_AXIS_INDEX], accelRawData[Y_AXIS_INDEX], accelRawData[Z_AXIS_INDEX]);
 				i=0;
 			}
     	}
-    	vTaskDelay(5/portTICK_PERIOD_MS);
 	}
 }
 

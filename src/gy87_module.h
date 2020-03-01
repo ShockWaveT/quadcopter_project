@@ -29,6 +29,9 @@
 #define FS_SEL2_ACCEL_SCALE	4096
 #define FS_SEL3_ACCEL_SCALE	2048
 
+/* 180/pi=57.2957 */
+#define DEGREE_CNVRT_CONST 57.2957
+
 /* defines for the accelerometer and gyro data array indexes */
 #define X_AXIS_INDEX 0
 #define Y_AXIS_INDEX 1
@@ -39,5 +42,6 @@ int8_t mpu6050_init(uint8_t gyroFullScaleRange, uint8_t accelFullScaleRange);
 int8_t gyro_measurement_read(int16_t* gyroBuffer);
 int8_t accel_measurement_read(int16_t* accelBuffer);
 int8_t gyro_do_calibration(double* gyroCalibData);
+int8_t accel_do_calibration(double* accelCalibData);
 
 #endif /* GY87_MODULE_H_ */
