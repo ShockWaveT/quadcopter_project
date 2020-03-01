@@ -1,4 +1,4 @@
 gy87_module.c:32:8:mpu6050_init	24	static
 gy87_module.c:57:8:gyro_measurement_read	24	static
 gy87_module.c:80:8:accel_measurement_read	24	static
-gy87_module.c:108:8:gyro_do_calibration	48	static
+gy87_module.c:108:8:gyro_do_calibration	40	static

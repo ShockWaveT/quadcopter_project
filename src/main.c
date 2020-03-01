@@ -23,8 +23,8 @@
 #include "queue.h"
 #include "timers.h"
 
-int16_t gyroData[3];
-int16_t accelData[3];
+int16_t gyroRawData[3];
+int16_t accelRawData[3];
 
 
 void test_task(void *pvParameters)
@@ -155,14 +155,8 @@ void test_task(void *pvParameters)
 
 void motion_control_task(void *pvParameters)
 {
-	double accelRaw_x;
-	double accelRaw_y;
-	double accelRaw_z;
-	double accelAngle_x;
-	double accelAngle_y;
-
-	double gyroSum=0;
-	int32_t gyroAngle;
+	double accelAngleValues[3]={0};
+	double gyroAngleValues[3]={0};
 	double calc1;
 	double calc2;
 
@@ -171,28 +165,26 @@ void motion_control_task(void *pvParameters)
 	uint32_t elapsed_time_in_seconds=0;
 
 	uint8_t caliberateFlag=0;
-	uint32_t caliberateCount=0;
-	double calibrationValue_X=0;
-	double calibrationValue_Y=0;
-	double calibrationValue_Z=0;
+	double gyroCalibVal[3]={0};
 
 	uint32_t i=0;
 
 
 	while(1)
 	{
-		if(gyro_measurement_read(gyroData)<0)
+		if(gyro_measurement_read(gyroRawData)<0)
 		    uart_printf("gyro read fail\n");
 
     	if(!caliberateFlag)
     	{
     		uart_printf("calibration started\n");
-    		if(gyro_do_calibration(&calibrationValue_X, &calibrationValue_Y, &calibrationValue_Z)<0)
+    		if(gyro_do_calibration(gyroCalibVal)<0)
     		{
     			uart_printf("calibration fail\n");
     			while(1);
     		}
     		caliberateFlag = 1;
+//    		uart_printf("calib value: %.1f\n", gyroCalibVal[X_AXIS_INDEX]);
     	}
 
     	else if(caliberateFlag)
@@ -202,9 +194,13 @@ void motion_control_task(void *pvParameters)
 
     		if(elapsed_time_in_seconds!=0)
     		{
-				calc1 = (double)gyroData[0]-calibrationValue_X;
-				calc2 = (double)elapsed_time_in_seconds*(16.4f);
-				gyroSum = (calc1/calc2)+gyroSum;
+    			calc1 = ((double)elapsed_time_in_seconds)*16.4f;
+
+				calc2 = ((double)gyroRawData[X_AXIS_INDEX])-gyroCalibVal[X_AXIS_INDEX];
+				gyroAngleValues[X_AXIS_INDEX] = (calc1/calc2)+gyroAngleValues[X_AXIS_INDEX];
+
+				calc2 = (double)gyroRawData[Y_AXIS_INDEX]-gyroCalibVal[Y_AXIS_INDEX];
+				gyroAngleValues[Y_AXIS_INDEX] = (calc2/calc1)+gyroAngleValues[Y_AXIS_INDEX];
     		}
 			previousTime = currentTime;
 
@@ -212,7 +208,7 @@ void motion_control_task(void *pvParameters)
 			i++;
 			if(i==20)
 			{
-				uart_printf("gyro angle: %.1f\n", gyroSum);
+				uart_printf("gyro angle: %.1f\n", gyroAngleValues[Y_AXIS_INDEX]);
 				i=0;
 			}
     	}
@@ -251,25 +247,6 @@ int main(void)
 
     while(1)
     {
-
-
-
-
-//    	if(gyro_measurement_read(gyroData)<0)
-//    		uart_printf("fail2...\n");
-//    	currentTime = millis();
-//    	elapsed_time_in_seconds = (1000/(currentTime-previousTime));
-//
-//    	calc1 = (gyroData[0]+26)*100000;
-//    	calc2 = elapsed_time_in_seconds*(32.8f);
-//    	gyroSum = (calc1/calc2)+gyroSum;
-//    	previousTime = currentTime;
-//    	k++;
-//    	if(k==1000)
-//    	{
-//    		uart_printf("x_angle: %d\n",(int32_t)(gyroSum/100000));
-//    		k=0;
-//    	}
 
 
 //    	motor_pwm_speed_set(PWM_CHANNEL4, 5);

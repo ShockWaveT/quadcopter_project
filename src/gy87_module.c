@@ -105,30 +105,30 @@ int8_t accel_measurement_read(int16_t* accelBuffer)
  * @retval 0 if success, -1 on failure.
  *
  */
-int8_t gyro_do_calibration(double* gyroCalibData_X, double* gyroCalibData_Y, double* gyroCalibData_Z)
+int8_t gyro_do_calibration(double* gyroCalibData)
 {
 	uint32_t sampleCount=0;
 	int16_t gyroRawData[3];
 
-	*gyroCalibData_X=0;
-	*gyroCalibData_Y=0;
-	*gyroCalibData_Z=0;
+	gyroCalibData[X_AXIS_INDEX]=0;
+	gyroCalibData[Y_AXIS_INDEX]=0;
+	gyroCalibData[Z_AXIS_INDEX]=0;
 
 	while(sampleCount<200)
 	{
 		if(gyro_measurement_read(gyroRawData)<0)
 			return -1;
 
-		*gyroCalibData_X = (gyroRawData[0]+(*gyroCalibData_X));
-		*gyroCalibData_Y = (gyroRawData[1]+(*gyroCalibData_Y));
-		*gyroCalibData_Z = (gyroRawData[2]+(*gyroCalibData_Z));
+		gyroCalibData[X_AXIS_INDEX] = (gyroRawData[X_AXIS_INDEX]+gyroCalibData[X_AXIS_INDEX]);
+		gyroCalibData[Y_AXIS_INDEX] = (gyroRawData[Y_AXIS_INDEX]+gyroCalibData[Y_AXIS_INDEX]);
+		gyroCalibData[Z_AXIS_INDEX] = (gyroRawData[Z_AXIS_INDEX]+gyroCalibData[Z_AXIS_INDEX]);
 		sampleCount++;
 		delay_ms(25);
 	}
 
-	*gyroCalibData_X = ((*gyroCalibData_X)/200);
-	*gyroCalibData_Y = ((*gyroCalibData_Y)/200);
-	*gyroCalibData_Z = ((*gyroCalibData_Z)/200);
+	gyroCalibData[X_AXIS_INDEX] = gyroCalibData[X_AXIS_INDEX]/200;
+	gyroCalibData[Y_AXIS_INDEX] = gyroCalibData[Y_AXIS_INDEX]/200;
+	gyroCalibData[Z_AXIS_INDEX] = gyroCalibData[Z_AXIS_INDEX]/200;
 
 	return 0;
 }
