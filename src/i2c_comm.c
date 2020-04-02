@@ -1,9 +1,9 @@
 /*
- * i2c_comm.c
- *
- * Created on: 09-Feb-2020
- * Author: Arun
+ * @file 	i2c_comm.c
+ * @date 	09-Feb-2020
+ * @author 	Arun Cheriyan
  */
+
 #include "stm32f10x.h"
 #include "stm32f10x_rcc.h"
 #include "stm32f10x_gpio.h"
@@ -13,13 +13,13 @@
 #include "small_printf.h"
 
 
-/**
+/************************************************************************//*
  * Initializes the I2C peripheral.
  *
  * @param ClockSpeed Bus communication frequency in Hz
  * @param OwnAddress MCU I2C address
  * @return none.
- */
+ **************************************************************************/
 void I2C_LowLevel_Init(uint32_t ClockSpeed, uint8_t OwnAddress)
 {
 	I2C_InitTypeDef  I2C_InitStructure;
@@ -49,14 +49,15 @@ void I2C_LowLevel_Init(uint32_t ClockSpeed, uint8_t OwnAddress)
 	I2C_Init(I2C1, &I2C_InitStructure);
 }
 
-/**
+
+/************************************************************************//*
  * reads a register of the slave device. only works on slave devices
  * with register addresses not longer than 8 bits.
  *
  * @param slaveAddre slave address.
  * @param registerAddr adress of the slave register to be read.
  * @return none.
- */
+ **************************************************************************/
 uint8_t i2c_register_read(uint8_t slaveAddr, uint8_t registerAddr)
 {
 	uint8_t data;
@@ -71,7 +72,6 @@ uint8_t i2c_register_read(uint8_t slaveAddr, uint8_t registerAddr)
 		if(timeout_alarm_status_check() == 1)
 			return 0;
 	}
-	//uart_printf("aa\n");
 
 	I2C_Send7bitAddress(I2C1, (slaveAddr<<1), I2C_Direction_Transmitter);
 	while (!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED))
@@ -79,8 +79,6 @@ uint8_t i2c_register_read(uint8_t slaveAddr, uint8_t registerAddr)
 		if(timeout_alarm_status_check() == 1)
 			return 0;
 	}
-	//uart_printf("bb\n");
-
 
 	I2C_SendData(I2C1, registerAddr);
 	while (!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_BYTE_TRANSMITTED))
@@ -88,7 +86,6 @@ uint8_t i2c_register_read(uint8_t slaveAddr, uint8_t registerAddr)
 		if(timeout_alarm_status_check() == 1)
 			return 0;
 	}
-	//uart_printf("cc\n");
 
 	I2C_GenerateSTART(I2C1,ENABLE);
 	while (!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_MODE_SELECT))
@@ -96,7 +93,6 @@ uint8_t i2c_register_read(uint8_t slaveAddr, uint8_t registerAddr)
 		if(timeout_alarm_status_check() == 1)
 			return 0;
 	}
-	//uart_printf("dd\n");
 
 	I2C_Send7bitAddress(I2C1, (slaveAddr<<1), I2C_Direction_Receiver);
 	while (!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED))
@@ -104,7 +100,6 @@ uint8_t i2c_register_read(uint8_t slaveAddr, uint8_t registerAddr)
 		if(timeout_alarm_status_check() == 1)
 			return 0;
 	}
-	//uart_printf("ee\n");
 
 	while (!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_BYTE_RECEIVED))
 	{
@@ -114,26 +109,23 @@ uint8_t i2c_register_read(uint8_t slaveAddr, uint8_t registerAddr)
 
 	I2C_AcknowledgeConfig(I2C1,DISABLE);
 	data = I2C_ReceiveData(I2C1);
-	//uart_printf("ff\n");
 
 	I2C_GenerateSTOP(I2C1,ENABLE);
-	//uart_printf("gg\n");
-
 	timeout_alarm_off();
 
 	return data;
 }
 
-/**
- * Reads data from the slave.
+
+/************************************************************************//*
+ * Reads data from the i2c slave registers.
  *
  * @param slaveAddr slave address.
  * @param registerAddr starting memory location of slave to start reading from.
  * @param writeBuffer pointer to the buffer to hold the read data.
  * @param bytesNum number of bytes to read from slave.
  * @return 0 on success, -1 on timeout.
- *
- */
+ **************************************************************************/
 int8_t i2c_slave_mem_read(uint8_t slaveAddr, uint8_t registerAddr, uint8_t* writeBuffer, uint8_t bytesNum)
 {
 	uint8_t i;
@@ -149,7 +141,6 @@ int8_t i2c_slave_mem_read(uint8_t slaveAddr, uint8_t registerAddr, uint8_t* writ
 		if(timeout_alarm_status_check() == 1)
 			return -1;
 	}
-	//uart_printf("aa\n");
 
 	I2C_Send7bitAddress(I2C1, (slaveAddr<<1), I2C_Direction_Transmitter);
 	while (!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_TRANSMITTER_MODE_SELECTED))
@@ -157,8 +148,6 @@ int8_t i2c_slave_mem_read(uint8_t slaveAddr, uint8_t registerAddr, uint8_t* writ
 		if(timeout_alarm_status_check() == 1)
 			return -1;
 	}
-	//uart_printf("bb\n");
-
 
 	I2C_SendData(I2C1, registerAddr);
 	while (!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_BYTE_TRANSMITTED))
@@ -166,7 +155,6 @@ int8_t i2c_slave_mem_read(uint8_t slaveAddr, uint8_t registerAddr, uint8_t* writ
 		if(timeout_alarm_status_check() == 1)
 			return -1;
 	}
-	//uart_printf("cc\n");
 
 	I2C_GenerateSTART(I2C1,ENABLE);
 	while (!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_MODE_SELECT))
@@ -174,7 +162,6 @@ int8_t i2c_slave_mem_read(uint8_t slaveAddr, uint8_t registerAddr, uint8_t* writ
 		if(timeout_alarm_status_check() == 1)
 			return -1;
 	}
-	//uart_printf("dd\n");
 
 	I2C_Send7bitAddress(I2C1, slaveAddr<<1, I2C_Direction_Receiver);
 	while (!I2C_CheckEvent(I2C1, I2C_EVENT_MASTER_RECEIVER_MODE_SELECTED))
@@ -182,7 +169,6 @@ int8_t i2c_slave_mem_read(uint8_t slaveAddr, uint8_t registerAddr, uint8_t* writ
 		if(timeout_alarm_status_check() == 1)
 			return -1;
 	}
-	//uart_printf("ee\n");
 
 	while(i>0)
 	{
@@ -195,23 +181,21 @@ int8_t i2c_slave_mem_read(uint8_t slaveAddr, uint8_t registerAddr, uint8_t* writ
 			I2C_AcknowledgeConfig(I2C1,DISABLE);
 		writeBuffer[bytesNum-i] = I2C_ReceiveData(I2C1);
 		i--;
-		//uart_printf("ff\n");
 	}
 	I2C_GenerateSTOP(I2C1,ENABLE);
-	//uart_printf("gg\n");
 	timeout_alarm_off();
 	return 0;
 }
 
-/**
+
+/************************************************************************//*
  * write data to slave registers/memory.
  *
  * @param slaveAddr slave address.
  * @param registerAddr starting memory location of slave to start writing to.
  * @param writedata data to be written to the slave register.
  * @return 0 on success, -1 on timeout.
- *
- */
+ **************************************************************************/
 int8_t i2c_slave_mem_write(uint8_t slaveAddr, uint8_t registerAddr, uint8_t writeData)
 {
 	timeout_alarm_set(20);
@@ -248,3 +232,4 @@ int8_t i2c_slave_mem_write(uint8_t slaveAddr, uint8_t registerAddr, uint8_t writ
 
 	return 0;
 }
+

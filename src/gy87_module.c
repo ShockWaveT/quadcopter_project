@@ -1,8 +1,7 @@
 /*
- * gy87_module.c
- *
- *  Created on: 05-Jan-2020
- *      Author: arun
+ * @file 	gy87_module.c
+ * @date 	05-Jan-2020
+ * @author 	Arun Cheriyan
  */
 
 #include "stm32f10x.h"
@@ -12,7 +11,11 @@
 #include "i2c_comm.h"
 #include "small_printf.h"
 
-/**
+
+/************************************************************************//*
+ * initializes the gyro and accelerometer devices of the mpu6050
+ * module
+ *
  * @param gyroFullScaleRange: gyro full scale range.
  * @param accelFullScaleRange: accelerometer full scale range.
  * @retval 0 on success, -1 on timeout.
@@ -22,13 +25,7 @@
  * 0x10: 1000 degrees/second, error: 26
  * 0x18: 2000 degrees/second, error: 13
  *
- * accelerometer
- * 0x00:  error:
- * 0x08:  error: x-280, y-60, z-7380
- * 0x10:  error:
- * 0x18:  error:
- *
- */
+ **************************************************************************/
 int8_t mpu6050_init(uint8_t gyroFullScaleRange, uint8_t accelFullScaleRange)
 {
 	int8_t returnCode=0;
@@ -49,11 +46,13 @@ int8_t mpu6050_init(uint8_t gyroFullScaleRange, uint8_t accelFullScaleRange)
 	return 0;
 }
 
-/**
+
+/************************************************************************//*
  * Reads the raw X, Y and Z angular velocity from gyro.
+ *
  * @param gyroBuffer: buffer for the read data to be stored.
  * @retval 0 on success, -1 on timeout.
- */
+ **************************************************************************/
 int8_t gyro_measurement_read(int16_t* gyroBuffer)
 {
 	uint8_t gyroReadValues[6];
@@ -72,11 +71,13 @@ int8_t gyro_measurement_read(int16_t* gyroBuffer)
 		return -1;
 }
 
-/**
+
+/************************************************************************//*
  * Reads the raw X, Y and Z values from accelerometer.
+ *
  * @param accelBuffer: buffer for the read data to be stored.
  * @retval 0 on success, -1 on timeout.
- */
+ **************************************************************************/
 int8_t accel_measurement_read(int16_t* accelBuffer)
 {
 	uint8_t accelReadValues[6];
@@ -95,13 +96,14 @@ int8_t accel_measurement_read(int16_t* accelBuffer)
 		return -1;
 }
 
-/**
+
+/************************************************************************//*
  * calculates gyro calibration values to compensate sensor error.
  *
  * @param gyroCalibData: gyro axis calibration values return buffer.
  * @retval 0 if success, -1 on failure.
  *
- */
+ **************************************************************************/
 int8_t gyro_do_calibration(double* gyroCalibData)
 {
 	uint32_t sampleCount=0;
@@ -131,13 +133,14 @@ int8_t gyro_do_calibration(double* gyroCalibData)
 }
 
 
-/**
+/************************************************************************//*
  * calculates accelerometer calibration values to compensate sensor error.
  *
- * @param accelCalibData: accelerometer axis calibration values return buffer.
+ * @param accelCalibData: accelerometer axis calibration values return
+ * buffer.
  * @retval 0 if success, -1 on failure.
  *
- */
+ **************************************************************************/
 int8_t accel_do_calibration(double* accelCalibData)
 {
 	uint32_t sampleCount=0;

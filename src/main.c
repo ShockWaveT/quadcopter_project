@@ -22,10 +22,28 @@
 #include "task.h"
 #include "queue.h"
 #include "timers.h"
+#include "attitude_estimation/MadgwickAHRS.h"
 
 int16_t gyroRawData[3];
 int16_t accelRawData[3];
 
+void euler_angle_calc(double* gyroArray)
+{
+	double phi = (gyroArray[X_AXIS_INDEX]*M_PI)/180;
+	double theta = (gyroArray[Y_AXIS_INDEX]*M_PI)/180;
+	double psi = (gyroArray[Z_AXIS_INDEX]*M_PI)/180;
+
+
+	double rotation_matrix[3][3] = 	{
+												{ 1,		sin(phi)*tan(theta), 	cos(phi)*tan(theta) },
+												{ 0, 		cos(phi), 				-sin(phi)			},
+												{ 0,		sin(phi)/cos(theta),	cos(phi)/cos(theta)	},
+									};
+
+
+
+
+}
 
 void test_task(void *pvParameters)
 {
@@ -38,14 +56,16 @@ void test_task(void *pvParameters)
 
 //void motion_control_task(void *pvParameters)
 //{
-//	double accelRaw_x;
-//	double accelRaw_y;
-//	double accelRaw_z;
-//	double accelAngle_x;
-//	double accelAngle_y;
+//	double accelAngleValues[3]={0};
+//	uint8_t accelCalibFlag=0;
+//	double accelCalibVal[3]={0};
+//	double squareOfRawAccel_X;
+//	double squareOfRawAccel_Y;
+//	double squareOfRawAccel_Z;
 //
-//	double gyroSum=0;
-//	int32_t gyroAngle;
+//	double gyroAngleValues[3]={0};
+//	uint8_t gyroCalibFlag=0;
+//	double gyroCalibVal[3]={0};
 //	double calc1;
 //	double calc2;
 //
@@ -53,114 +73,104 @@ void test_task(void *pvParameters)
 //	uint32_t currentTime=0;
 //	uint32_t elapsed_time_in_seconds=0;
 //
-//	while(1)
-//	{
-//		if(accel_measurement_read(accelData)<0)
-//			uart_printf("accel read fail\n");
-//
-//		vTaskDelay(25/portTICK_PERIOD_MS);
-//
-//		if(gyro_measurement_read(gyroData)<0)
-//		    uart_printf("gyro read fail\n");
-//
-//		accelRaw_x = (double)(accelData[0]);
-//		accelRaw_y = (double)(accelData[1]);
-//		accelRaw_z = (double)(accelData[2]);
-//		accelAngle_x = atan( accelRaw_x/sqrt((accelRaw_z*accelRaw_z)+(accelRaw_y*accelRaw_y)) );
-//		accelAngle_y = atan( accelRaw_y/sqrt((accelRaw_z*accelRaw_z)+(accelRaw_x*accelRaw_x)) );
-//
-//
-//		currentTime = millis();
-//    	elapsed_time_in_seconds = (1000/(currentTime-previousTime));
-//
-//    	calc1 = gyroData[0]+40;
-//    	calc2 = elapsed_time_in_seconds*(32.8f);
-//    	gyroSum = (calc1/calc2)+gyroSum;
-//    	previousTime = currentTime;
-//
-//
-////		uart_printf("x: %.1f    y: %.1f    z:%.1f \n",
-////				   (accelAngle_x*180)/3.14, (accelAngle_y*180)/3.14, (accelAngle_z*180)/3.14);
-//    	uart_printf("x: %.1f \n",gyroSum);
-////		delay_ms(50);
-//    	vTaskDelay(25/portTICK_PERIOD_MS);
-//	}
-//}
-
-//void motion_control_task(void *pvParameters)
-//{
-//	double accelRaw_x;
-//	double accelRaw_y;
-//	double accelRaw_z;
-//	double accelAngle_x;
-//	double accelAngle_y;
-//
-//	double gyroSum=0;
-//	int32_t gyroAngle;
-//	double calc1;
-//	double calc2;
-//
-//	uint32_t previousTime=0;
-//	uint32_t currentTime=0;
-//	uint32_t elapsed_time_in_seconds=0;
-//
-//	uint8_t caliberateFlag=0;
-//	uint32_t caliberateCount=0;
-//	double caliberateAvg=0;
-//
+//	uint32_t i=0;
 //
 //	while(1)
 //	{
-//		if(gyro_measurement_read(gyroData)<0)
-//		    uart_printf("gyro read fail\n");
-//
-//    	if(!caliberateFlag)
+//    	if(!gyroCalibFlag)
 //    	{
-//			if(caliberateCount<200)
-//			{
-//				caliberateAvg = (gyroData[0]+caliberateAvg);
-//				caliberateCount++;
-//			}
-//			else
-//			{
-//				caliberateAvg = (caliberateAvg/200);
-////				if(caliberateAvg<0)
-////					caliberateAvg = caliberateAvg-1;
-////				if(caliberateAvg>0)
-////					caliberateAvg = caliberateAvg+1;
-//				caliberateFlag=1;
-//				uart_printf("Calibration complete: %.1f\n",caliberateAvg);
-//			}
+//    		uart_printf("gyro calibration started\n");
+//    		if(gyro_do_calibration(gyroCalibVal)<0)
+//    		{
+//    			uart_printf("gyro calibration fail\n");
+//    			while(1);
+//    		}
+//    		gyroCalibFlag = 1;
+////    		uart_printf("calib value: %.1f\n", gyroCalibVal[X_AXIS_INDEX]);
 //    	}
+//    	else if(!accelCalibFlag)
+//		{
+//			uart_printf("accel calibration started\n");
+//			if(accel_do_calibration(accelCalibVal)<0)
+//			{
+//				uart_printf("accel calibration fail\n");
+//				while(1);
+//			}
+//			accelCalibFlag = 1;
+////    		uart_printf("calib value: %.1f\n", gyroCalibVal[X_AXIS_INDEX]);
+//		}
 //
-//    	else if(caliberateFlag)
+//    	else if((gyroCalibFlag == 1)&&(accelCalibFlag == 1))
 //    	{
+//    		if(accel_measurement_read(accelRawData)<0)
+//    			uart_printf("accel read fail\n");
+//
+//    		accelRawData[X_AXIS_INDEX] = accelRawData[X_AXIS_INDEX]+accelCalibVal[X_AXIS_INDEX];
+//    		accelRawData[Y_AXIS_INDEX] = accelRawData[Y_AXIS_INDEX]+accelCalibVal[Y_AXIS_INDEX];
+//    		accelRawData[Z_AXIS_INDEX] = accelRawData[Z_AXIS_INDEX]+accelCalibVal[Z_AXIS_INDEX];
+//
+//			/*
+//			 * This will increase speed of execution since we don't have to calculate
+//			 * the squares each data more than once in one iteration. also this increases readability.
+//			 */
+//			squareOfRawAccel_X = accelRawData[X_AXIS_INDEX]*accelRawData[X_AXIS_INDEX];
+//			squareOfRawAccel_Y = accelRawData[Y_AXIS_INDEX]*accelRawData[Y_AXIS_INDEX];
+//			squareOfRawAccel_Z = accelRawData[Z_AXIS_INDEX]*accelRawData[Z_AXIS_INDEX];
+//
+//			accelAngleValues[Y_AXIS_INDEX] = atan(accelRawData[X_AXIS_INDEX] / sqrt((squareOfRawAccel_Y+squareOfRawAccel_Z)) );
+//			accelAngleValues[X_AXIS_INDEX] = atan(accelRawData[Y_AXIS_INDEX] / sqrt((squareOfRawAccel_X+squareOfRawAccel_Z)) );
+//
+//			/* convert radians to degrees */
+//			accelAngleValues[X_AXIS_INDEX] = accelAngleValues[X_AXIS_INDEX]*DEGREE_CNVRT_CONST;
+//			accelAngleValues[Y_AXIS_INDEX] = accelAngleValues[Y_AXIS_INDEX]*DEGREE_CNVRT_CONST;
+//
+//			/*
+//			 * delay for sampling gyro values and to give a
+//			 * delay b/w reads of gyro and accelerometer.
+//			 */
+//			vTaskDelay(5/portTICK_PERIOD_MS);
+//
+//			if(gyro_measurement_read(gyroRawData)<0)
+//				uart_printf("gyro read fail\n");
+//
 //    		currentTime = millis();
 //    		elapsed_time_in_seconds = (1000/(currentTime-previousTime));
 //
 //    		if(elapsed_time_in_seconds!=0)
 //    		{
-//				calc1 = (double)gyroData[0]-caliberateAvg;
-//				calc2 = (double)elapsed_time_in_seconds*(32.8f);
-//				gyroSum = (calc1/calc2)+gyroSum;
+//    			calc1 = ((double)elapsed_time_in_seconds)*16.4f;
+//
+//				calc2 = ((double)gyroRawData[X_AXIS_INDEX])-gyroCalibVal[X_AXIS_INDEX];
+//				gyroAngleValues[X_AXIS_INDEX] = (calc2/calc1)+gyroAngleValues[X_AXIS_INDEX];
+//
+//				calc2 = (double)gyroRawData[Y_AXIS_INDEX]-gyroCalibVal[Y_AXIS_INDEX];
+//				gyroAngleValues[Y_AXIS_INDEX] = (calc2/calc1)+gyroAngleValues[Y_AXIS_INDEX];
 //    		}
 //			previousTime = currentTime;
 //
-////				uart_printf("raw x: %d     x: %.1f \n",gyroData[0], gyroSum);
-//			uart_printf("calc1: %.1f   calc2: %.1f   gyroSum: %.1f\n",calc1, calc2, gyroSum);
+//			i++;
+//			if(i==20)
+//			{
+////				uart_printf("gyro: %.1f  accel: %.1f\n", gyroAngleValues[X_AXIS_INDEX], accelAngleValues[X_AXIS_INDEX]);
+////				uart_printf("x: %d  y: %d  z: %d\n", accelRawData[X_AXIS_INDEX], accelRawData[Y_AXIS_INDEX], accelRawData[Z_AXIS_INDEX]);
+//				uart_printf("x: %.1f  y: %.1f  z: %.1f\n", gyroAngleValues[X_AXIS_INDEX], gyroAngleValues[Y_AXIS_INDEX], gyroAngleValues[Z_AXIS_INDEX]);
+//
+//				i=0;
+//			}
+//
 //    	}
-//    	vTaskDelay(50/portTICK_PERIOD_MS);
 //	}
 //}
+
 
 void motion_control_task(void *pvParameters)
 {
 	double accelAngleValues[3]={0};
 	uint8_t accelCalibFlag=0;
 	double accelCalibVal[3]={0};
-	double squareOfRawAccel_X;
-	double squareOfRawAccel_Y;
-	double squareOfRawAccel_Z;
+	float gyroRadPerSec_X = 0;
+	float gyroRadPerSec_Y = 0;
+	float gyroRadPerSec_Z = 0;
 
 	double gyroAngleValues[3]={0};
 	uint8_t gyroCalibFlag=0;
@@ -171,9 +181,11 @@ void motion_control_task(void *pvParameters)
 	uint32_t previousTime=0;
 	uint32_t currentTime=0;
 	uint32_t elapsed_time_in_seconds=0;
+	extern volatile float q0, q1, q2, q3;
+	extern volatile float roll, pitch, yaw;
 
-	uint32_t i=0;
 
+	uint32_t i=0,j=0;
 
 	while(1)
 	{
@@ -204,61 +216,44 @@ void motion_control_task(void *pvParameters)
     	{
     		if(accel_measurement_read(accelRawData)<0)
     			uart_printf("accel read fail\n");
-
     		accelRawData[X_AXIS_INDEX] = accelRawData[X_AXIS_INDEX]+accelCalibVal[X_AXIS_INDEX];
-    		accelRawData[Y_AXIS_INDEX] = accelRawData[Y_AXIS_INDEX]+accelCalibVal[Y_AXIS_INDEX];
-    		accelRawData[Z_AXIS_INDEX] = accelRawData[Z_AXIS_INDEX]+accelCalibVal[Z_AXIS_INDEX];
+			accelRawData[Y_AXIS_INDEX] = accelRawData[Y_AXIS_INDEX]+accelCalibVal[Y_AXIS_INDEX];
+			accelRawData[Z_AXIS_INDEX] = accelRawData[Z_AXIS_INDEX]+accelCalibVal[Z_AXIS_INDEX];
 
-			/*
-			 * This will increase speed of execution since we don't have to calculate
-			 * the squares each data more than once in one iteration. also this increases readability.
-			 */
-			squareOfRawAccel_X = accelRawData[X_AXIS_INDEX]*accelRawData[X_AXIS_INDEX];
-			squareOfRawAccel_Y = accelRawData[Y_AXIS_INDEX]*accelRawData[Y_AXIS_INDEX];
-			squareOfRawAccel_Z = accelRawData[Z_AXIS_INDEX]*accelRawData[Z_AXIS_INDEX];
-
-			accelAngleValues[Y_AXIS_INDEX] = atan(accelRawData[X_AXIS_INDEX] / sqrt((squareOfRawAccel_Y+squareOfRawAccel_Z)) );
-			accelAngleValues[X_AXIS_INDEX] = atan(accelRawData[Y_AXIS_INDEX] / sqrt((squareOfRawAccel_X+squareOfRawAccel_Z)) );
-
-			/* convert radians to degrees */
-			accelAngleValues[X_AXIS_INDEX] = accelAngleValues[X_AXIS_INDEX]*DEGREE_CNVRT_CONST;
-			accelAngleValues[Y_AXIS_INDEX] = accelAngleValues[Y_AXIS_INDEX]*DEGREE_CNVRT_CONST;
-
-			/*
-			 * delay for sampling gyro values and to give a
-			 * delay b/w reads of gyro and accelerometer.
-			 */
 			vTaskDelay(5/portTICK_PERIOD_MS);
 
 			if(gyro_measurement_read(gyroRawData)<0)
-				uart_printf("gyro read fail\n");
+			    uart_printf("gyro read fail\n");
+			gyroRawData[X_AXIS_INDEX] = (gyroRawData[X_AXIS_INDEX])-gyroCalibVal[X_AXIS_INDEX];
+			gyroRawData[Y_AXIS_INDEX] = (gyroRawData[Y_AXIS_INDEX])-gyroCalibVal[Y_AXIS_INDEX];
+			gyroRawData[Z_AXIS_INDEX] = (gyroRawData[Z_AXIS_INDEX])-gyroCalibVal[Z_AXIS_INDEX];
 
-    		currentTime = millis();
-    		elapsed_time_in_seconds = (1000/(currentTime-previousTime));
+			//convert to radians/second
+			gyroRadPerSec_X = (((float)gyroRawData[X_AXIS_INDEX])*M_PI)/180;
+			gyroRadPerSec_Y = (((float)gyroRawData[Y_AXIS_INDEX])*M_PI)/180;
+			gyroRadPerSec_Z = (((float)gyroRawData[Z_AXIS_INDEX])*M_PI)/180;
 
-    		if(elapsed_time_in_seconds!=0)
-    		{
-    			calc1 = ((double)elapsed_time_in_seconds)*16.4f;
-
-				calc2 = ((double)gyroRawData[X_AXIS_INDEX])-gyroCalibVal[X_AXIS_INDEX];
-				gyroAngleValues[X_AXIS_INDEX] = (calc2/calc1)+gyroAngleValues[X_AXIS_INDEX];
-
-				calc2 = (double)gyroRawData[Y_AXIS_INDEX]-gyroCalibVal[Y_AXIS_INDEX];
-				gyroAngleValues[Y_AXIS_INDEX] = (calc2/calc1)+gyroAngleValues[Y_AXIS_INDEX];
-    		}
-			previousTime = currentTime;
-
-//				uart_printf("raw x: %d     x: %.1f \n",gyroData[0], gyroSum);
-			i++;
-			if(i==20)
+			for(j=0;j<20;j++)
 			{
-				uart_printf("gyro: %.1f  accel: %.1f\n", gyroAngleValues[X_AXIS_INDEX], accelAngleValues[X_AXIS_INDEX]);
-//				uart_printf("x: %d  y: %d  z: %d\n", accelRawData[X_AXIS_INDEX], accelRawData[Y_AXIS_INDEX], accelRawData[Z_AXIS_INDEX]);
+				MadgwickAHRSupdateIMU(gyroRadPerSec_X, gyroRadPerSec_Y, gyroRadPerSec_Z,
+						(float)accelRawData[X_AXIS_INDEX], (float)accelRawData[Y_AXIS_INDEX], (float)accelRawData[Z_AXIS_INDEX]);
+				Madgwick_computeAngles();
+			}
+
+			i++;
+			if(i==10)
+			{
+//				uart_printf("q0: %.1f  q1: %.1f  q2: %.1f  q3: %.1f\n", q0, q1, q2, q3);
+				uart_printf("roll: %.1f  pitch: %.1f  yaw: %.1f\n", roll*DEGREE_CNVRT_CONST, pitch*DEGREE_CNVRT_CONST, yaw*DEGREE_CNVRT_CONST);
+//				uart_printf("x: %.1f  y: %.1f  z: %.1f\n", (float)gyroRawData[X_AXIS_INDEX], (float)gyroRawData[Y_AXIS_INDEX], (float)gyroRawData[Z_AXIS_INDEX]);
+
 				i=0;
 			}
+
     	}
 	}
 }
+
 
 void drone_init_task(void *pvParameters)
 {
@@ -333,7 +328,7 @@ void vApplicationStackOverflowHook( TaskHandle_t pxTask, char *pcTaskName )
 
 void vApplicationIdleHook( void )
 {
-volatile size_t xFreeStackSpace;
+	volatile size_t xFreeStackSpace;
 
 	/* This function is called on each cycle of the idle task.  In this case it
 	does nothing useful, other than report the amout of FreeRTOS heap that

@@ -1,4 +1,4 @@
 i2c_comm.c:23:6:I2C_LowLevel_Init	40	static
-i2c_comm.c:60:9:i2c_register_read	24	static
-i2c_comm.c:137:8:i2c_slave_mem_read	32	static
-i2c_comm.c:215:8:i2c_slave_mem_write	16	static
+i2c_comm.c:61:9:i2c_register_read	24	static
+i2c_comm.c:129:8:i2c_slave_mem_read	32	static
+i2c_comm.c:199:8:i2c_slave_mem_write	16	static
