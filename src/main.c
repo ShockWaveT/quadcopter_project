@@ -23,6 +23,8 @@
 #include "queue.h"
 #include "timers.h"
 #include "attitude_estimation/MadgwickAHRS.h"
+#include "imu_utils.h"
+
 
 int16_t gyroRawData[3];
 int16_t accelRawData[3];
@@ -165,24 +167,24 @@ void test_task(void *pvParameters)
 
 void motion_control_task(void *pvParameters)
 {
-	double accelAngleValues[3]={0};
 	uint8_t accelCalibFlag=0;
-	double accelCalibVal[3]={0};
+	float accelCalibVal[3]={0};
+	float accelFiltered[3]={0};
+	float accelAlpha = 0.05;
+
 	float gyroRadPerSec_X = 0;
 	float gyroRadPerSec_Y = 0;
 	float gyroRadPerSec_Z = 0;
 
-	double gyroAngleValues[3]={0};
 	uint8_t gyroCalibFlag=0;
-	double gyroCalibVal[3]={0};
-	double calc1;
-	double calc2;
+	float gyroCalibVal[3]={0};
 
 	uint32_t previousTime=0;
 	uint32_t currentTime=0;
 	uint32_t elapsed_time_in_seconds=0;
 	extern volatile float q0, q1, q2, q3;
 	extern volatile float roll, pitch, yaw;
+	float roll_filtered=0;
 
 
 	uint32_t i=0,j=0;
@@ -192,38 +194,42 @@ void motion_control_task(void *pvParameters)
     	if(!gyroCalibFlag)
     	{
     		uart_printf("gyro calibration started\n");
-    		if(gyro_do_calibration(gyroCalibVal)<0)
+    		if(gyro_calc_bias(gyroCalibVal)<0)
     		{
     			uart_printf("gyro calibration fail\n");
     			while(1);
     		}
     		gyroCalibFlag = 1;
+    		vTaskDelay(10/portTICK_PERIOD_MS);
 //    		uart_printf("calib value: %.1f\n", gyroCalibVal[X_AXIS_INDEX]);
     	}
-    	else if(!accelCalibFlag)
+
+    	if(!accelCalibFlag)
 		{
 			uart_printf("accel calibration started\n");
-			if(accel_do_calibration(accelCalibVal)<0)
+			if(accel_calc_bias(accelCalibVal)<0)
 			{
 				uart_printf("accel calibration fail\n");
 				while(1);
 			}
+			vTaskDelay(10/portTICK_PERIOD_MS);
 			accelCalibFlag = 1;
 //    		uart_printf("calib value: %.1f\n", gyroCalibVal[X_AXIS_INDEX]);
 		}
 
-    	else if((gyroCalibFlag == 1)&&(accelCalibFlag == 1))
+    	if((gyroCalibFlag == 1)&&(accelCalibFlag == 1))
     	{
-    		if(accel_measurement_read(accelRawData)<0)
-    			uart_printf("accel read fail\n");
+    		if(imu_raw_measurement_read(accelRawData, gyroRawData)<0)
+    			uart_printf("imu read fail\n");
+
     		accelRawData[X_AXIS_INDEX] = accelRawData[X_AXIS_INDEX]+accelCalibVal[X_AXIS_INDEX];
 			accelRawData[Y_AXIS_INDEX] = accelRawData[Y_AXIS_INDEX]+accelCalibVal[Y_AXIS_INDEX];
 			accelRawData[Z_AXIS_INDEX] = accelRawData[Z_AXIS_INDEX]+accelCalibVal[Z_AXIS_INDEX];
 
-			vTaskDelay(5/portTICK_PERIOD_MS);
+			accelFiltered[X_AXIS_INDEX] = (accelAlpha*accelRawData[X_AXIS_INDEX]) + ((1-accelAlpha)*accelFiltered[X_AXIS_INDEX]);
+			accelFiltered[Y_AXIS_INDEX] = (accelAlpha*accelRawData[Y_AXIS_INDEX]) + ((1-accelAlpha)*accelFiltered[Y_AXIS_INDEX]);
+			accelFiltered[Z_AXIS_INDEX] = (accelAlpha*accelRawData[Z_AXIS_INDEX]) + ((1-accelAlpha)*accelFiltered[Z_AXIS_INDEX]);
 
-			if(gyro_measurement_read(gyroRawData)<0)
-			    uart_printf("gyro read fail\n");
 			gyroRawData[X_AXIS_INDEX] = (gyroRawData[X_AXIS_INDEX])-gyroCalibVal[X_AXIS_INDEX];
 			gyroRawData[Y_AXIS_INDEX] = (gyroRawData[Y_AXIS_INDEX])-gyroCalibVal[Y_AXIS_INDEX];
 			gyroRawData[Z_AXIS_INDEX] = (gyroRawData[Z_AXIS_INDEX])-gyroCalibVal[Z_AXIS_INDEX];
@@ -235,16 +241,26 @@ void motion_control_task(void *pvParameters)
 
 			for(j=0;j<20;j++)
 			{
+//				MadgwickAHRSupdateIMU(gyroRadPerSec_X, gyroRadPerSec_Y, gyroRadPerSec_Z,
+//						(float)accelRawData[X_AXIS_INDEX], (float)accelRawData[Y_AXIS_INDEX], (float)accelRawData[Z_AXIS_INDEX]);
 				MadgwickAHRSupdateIMU(gyroRadPerSec_X, gyroRadPerSec_Y, gyroRadPerSec_Z,
-						(float)accelRawData[X_AXIS_INDEX], (float)accelRawData[Y_AXIS_INDEX], (float)accelRawData[Z_AXIS_INDEX]);
+						accelFiltered[X_AXIS_INDEX], accelFiltered[Y_AXIS_INDEX], accelFiltered[Z_AXIS_INDEX]);
 				Madgwick_computeAngles();
 			}
 
+//			roll_filtered = low_pass_filter(roll, roll_filtered, 0.4);
+//			pitch_filtered = low_pass_filter(roll, pitch_filtered, 0.4);
+//			yaw_filtered = low_pass_filter(roll, yaw_filtered, 0.4);
+			//roll_filtered = (0.4*roll)+((1-0.4)*roll_filtered);
+
 			i++;
-			if(i==10)
+			if(i==8)
 			{
-//				uart_printf("q0: %.1f  q1: %.1f  q2: %.1f  q3: %.1f\n", q0, q1, q2, q3);
-				uart_printf("roll: %.1f  pitch: %.1f  yaw: %.1f\n", roll*DEGREE_CNVRT_CONST, pitch*DEGREE_CNVRT_CONST, yaw*DEGREE_CNVRT_CONST);
+//				uart_printf("%df \n", accelRawData[X_AXIS_INDEX]);
+//				uart_printf("%.1f \n", accelFiltered[X_AXIS_INDEX]);
+
+				uart_printf("%.1f\n", roll*DEGREE_CNVRT_CONST);
+//				uart_printf("roll: %.1f  pitch: %.1f  yaw: %.1f\n", roll_filtered*DEGREE_CNVRT_CONST, pitch_filtered*DEGREE_CNVRT_CONST, yaw_filtered*DEGREE_CNVRT_CONST);
 //				uart_printf("x: %.1f  y: %.1f  z: %.1f\n", (float)gyroRawData[X_AXIS_INDEX], (float)gyroRawData[Y_AXIS_INDEX], (float)gyroRawData[Z_AXIS_INDEX]);
 
 				i=0;
@@ -280,7 +296,7 @@ void drone_init_task(void *pvParameters)
 
 int main(void)
 {
-	xTaskCreate(drone_init_task, "drone_init_task", 200, NULL, 0, NULL );
+  	xTaskCreate(drone_init_task, "drone_init_task", 200, NULL, 0, NULL );
 	vTaskStartScheduler();
 	while(1);
 

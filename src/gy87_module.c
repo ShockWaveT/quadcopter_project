@@ -96,6 +96,34 @@ int8_t accel_measurement_read(int16_t* accelBuffer)
 		return -1;
 }
 
+/************************************************************************//*
+ * Reads the raw X, Y and Z values from accelerometer and gyro.
+ *
+ * @param returnBuffer: buffer for the read data to be stored.
+ * @retval 0 on success, -1 on timeout.
+ **************************************************************************/
+int8_t imu_raw_measurement_read(int16_t* accelBuffer, int16_t* gyroBuffer)
+{
+	uint8_t ReadValues[14];
+	int8_t errorValue;
+
+	errorValue = i2c_slave_mem_read(MPU6050_ID, 0x3B, ReadValues, 14);
+
+	if(errorValue == 0)
+	{
+		accelBuffer[0] = (ReadValues[0]<<8)|ReadValues[1];//x_out
+		accelBuffer[1] = (ReadValues[2]<<8)|ReadValues[3];//y_out
+		accelBuffer[2] = (ReadValues[4]<<8)|ReadValues[5];//z_out
+
+		gyroBuffer[0] = (ReadValues[8]<<8)|ReadValues[9];//x_out
+		gyroBuffer[1] = (ReadValues[10]<<8)|ReadValues[11];//y_out
+		gyroBuffer[2] = (ReadValues[12]<<8)|ReadValues[13];//z_out
+		return 0;
+	}
+	else
+		return -1;
+}
+
 
 /************************************************************************//*
  * calculates gyro calibration values to compensate sensor error.
@@ -104,7 +132,7 @@ int8_t accel_measurement_read(int16_t* accelBuffer)
  * @retval 0 if success, -1 on failure.
  *
  **************************************************************************/
-int8_t gyro_do_calibration(double* gyroCalibData)
+int8_t gyro_calc_bias(float* gyroCalibData)
 {
 	uint32_t sampleCount=0;
 	int16_t gyroRawData[3];
@@ -141,7 +169,7 @@ int8_t gyro_do_calibration(double* gyroCalibData)
  * @retval 0 if success, -1 on failure.
  *
  **************************************************************************/
-int8_t accel_do_calibration(double* accelCalibData)
+int8_t accel_calc_bias(float* accelCalibData)
 {
 	uint32_t sampleCount=0;
 	int16_t accelRawData[3];
