@@ -28,149 +28,32 @@
 
 int16_t gyroRawData[3];
 int16_t accelRawData[3];
-
-void euler_angle_calc(double* gyroArray)
-{
-	double phi = (gyroArray[X_AXIS_INDEX]*M_PI)/180;
-	double theta = (gyroArray[Y_AXIS_INDEX]*M_PI)/180;
-	double psi = (gyroArray[Z_AXIS_INDEX]*M_PI)/180;
-
-
-	double rotation_matrix[3][3] = 	{
-												{ 1,		sin(phi)*tan(theta), 	cos(phi)*tan(theta) },
-												{ 0, 		cos(phi), 				-sin(phi)			},
-												{ 0,		sin(phi)/cos(theta),	cos(phi)/cos(theta)	},
-									};
-
-
-
-
-}
+int16_t magRawData[3];
 
 void test_task(void *pvParameters)
 {
+	int8_t errorValue;
+
 	while(1)
 	{
-		uart_printf("testing task\n");
-		vTaskDelay(1000/portTICK_PERIOD_MS);
+		errorValue++;
+		if(errorValue == 100000)
+			uart_printf("test task\n");
+
 	}
 }
 
-//void motion_control_task(void *pvParameters)
-//{
-//	double accelAngleValues[3]={0};
-//	uint8_t accelCalibFlag=0;
-//	double accelCalibVal[3]={0};
-//	double squareOfRawAccel_X;
-//	double squareOfRawAccel_Y;
-//	double squareOfRawAccel_Z;
-//
-//	double gyroAngleValues[3]={0};
-//	uint8_t gyroCalibFlag=0;
-//	double gyroCalibVal[3]={0};
-//	double calc1;
-//	double calc2;
-//
-//	uint32_t previousTime=0;
-//	uint32_t currentTime=0;
-//	uint32_t elapsed_time_in_seconds=0;
-//
-//	uint32_t i=0;
-//
-//	while(1)
-//	{
-//    	if(!gyroCalibFlag)
-//    	{
-//    		uart_printf("gyro calibration started\n");
-//    		if(gyro_do_calibration(gyroCalibVal)<0)
-//    		{
-//    			uart_printf("gyro calibration fail\n");
-//    			while(1);
-//    		}
-//    		gyroCalibFlag = 1;
-////    		uart_printf("calib value: %.1f\n", gyroCalibVal[X_AXIS_INDEX]);
-//    	}
-//    	else if(!accelCalibFlag)
-//		{
-//			uart_printf("accel calibration started\n");
-//			if(accel_do_calibration(accelCalibVal)<0)
-//			{
-//				uart_printf("accel calibration fail\n");
-//				while(1);
-//			}
-//			accelCalibFlag = 1;
-////    		uart_printf("calib value: %.1f\n", gyroCalibVal[X_AXIS_INDEX]);
-//		}
-//
-//    	else if((gyroCalibFlag == 1)&&(accelCalibFlag == 1))
-//    	{
-//    		if(accel_measurement_read(accelRawData)<0)
-//    			uart_printf("accel read fail\n");
-//
-//    		accelRawData[X_AXIS_INDEX] = accelRawData[X_AXIS_INDEX]+accelCalibVal[X_AXIS_INDEX];
-//    		accelRawData[Y_AXIS_INDEX] = accelRawData[Y_AXIS_INDEX]+accelCalibVal[Y_AXIS_INDEX];
-//    		accelRawData[Z_AXIS_INDEX] = accelRawData[Z_AXIS_INDEX]+accelCalibVal[Z_AXIS_INDEX];
-//
-//			/*
-//			 * This will increase speed of execution since we don't have to calculate
-//			 * the squares each data more than once in one iteration. also this increases readability.
-//			 */
-//			squareOfRawAccel_X = accelRawData[X_AXIS_INDEX]*accelRawData[X_AXIS_INDEX];
-//			squareOfRawAccel_Y = accelRawData[Y_AXIS_INDEX]*accelRawData[Y_AXIS_INDEX];
-//			squareOfRawAccel_Z = accelRawData[Z_AXIS_INDEX]*accelRawData[Z_AXIS_INDEX];
-//
-//			accelAngleValues[Y_AXIS_INDEX] = atan(accelRawData[X_AXIS_INDEX] / sqrt((squareOfRawAccel_Y+squareOfRawAccel_Z)) );
-//			accelAngleValues[X_AXIS_INDEX] = atan(accelRawData[Y_AXIS_INDEX] / sqrt((squareOfRawAccel_X+squareOfRawAccel_Z)) );
-//
-//			/* convert radians to degrees */
-//			accelAngleValues[X_AXIS_INDEX] = accelAngleValues[X_AXIS_INDEX]*DEGREE_CNVRT_CONST;
-//			accelAngleValues[Y_AXIS_INDEX] = accelAngleValues[Y_AXIS_INDEX]*DEGREE_CNVRT_CONST;
-//
-//			/*
-//			 * delay for sampling gyro values and to give a
-//			 * delay b/w reads of gyro and accelerometer.
-//			 */
-//			vTaskDelay(5/portTICK_PERIOD_MS);
-//
-//			if(gyro_measurement_read(gyroRawData)<0)
-//				uart_printf("gyro read fail\n");
-//
-//    		currentTime = millis();
-//    		elapsed_time_in_seconds = (1000/(currentTime-previousTime));
-//
-//    		if(elapsed_time_in_seconds!=0)
-//    		{
-//    			calc1 = ((double)elapsed_time_in_seconds)*16.4f;
-//
-//				calc2 = ((double)gyroRawData[X_AXIS_INDEX])-gyroCalibVal[X_AXIS_INDEX];
-//				gyroAngleValues[X_AXIS_INDEX] = (calc2/calc1)+gyroAngleValues[X_AXIS_INDEX];
-//
-//				calc2 = (double)gyroRawData[Y_AXIS_INDEX]-gyroCalibVal[Y_AXIS_INDEX];
-//				gyroAngleValues[Y_AXIS_INDEX] = (calc2/calc1)+gyroAngleValues[Y_AXIS_INDEX];
-//    		}
-//			previousTime = currentTime;
-//
-//			i++;
-//			if(i==20)
-//			{
-////				uart_printf("gyro: %.1f  accel: %.1f\n", gyroAngleValues[X_AXIS_INDEX], accelAngleValues[X_AXIS_INDEX]);
-////				uart_printf("x: %d  y: %d  z: %d\n", accelRawData[X_AXIS_INDEX], accelRawData[Y_AXIS_INDEX], accelRawData[Z_AXIS_INDEX]);
-//				uart_printf("x: %.1f  y: %.1f  z: %.1f\n", gyroAngleValues[X_AXIS_INDEX], gyroAngleValues[Y_AXIS_INDEX], gyroAngleValues[Z_AXIS_INDEX]);
-//
-//				i=0;
-//			}
-//
-//    	}
-//	}
-//}
-
-
 void motion_control_task(void *pvParameters)
 {
+#define CALC_WORK_TIME 0
+#if CALC_WORK_TIME
+uint8_t workCount=0;
+#endif
+
 	uint8_t accelCalibFlag=0;
 	float accelCalibVal[3]={0};
 	float accelFiltered[3]={0};
-	float accelAlpha = 0.05;
+	float gyroRawRadPerSec[3] = {0};
 
 	float gyroRadPerSec_X = 0;
 	float gyroRadPerSec_Y = 0;
@@ -179,15 +62,12 @@ void motion_control_task(void *pvParameters)
 	uint8_t gyroCalibFlag=0;
 	float gyroCalibVal[3]={0};
 
-	uint32_t previousTime=0;
-	uint32_t currentTime=0;
-	uint32_t elapsed_time_in_seconds=0;
-	extern volatile float q0, q1, q2, q3;
 	extern volatile float roll, pitch, yaw;
-	float roll_filtered=0;
 
+	const float accelFilterAlpha = 0.05;
 
 	uint32_t i=0,j=0;
+	uint8_t magReadCount=0;
 
 	while(1)
 	{
@@ -201,7 +81,6 @@ void motion_control_task(void *pvParameters)
     		}
     		gyroCalibFlag = 1;
     		vTaskDelay(10/portTICK_PERIOD_MS);
-//    		uart_printf("calib value: %.1f\n", gyroCalibVal[X_AXIS_INDEX]);
     	}
 
     	if(!accelCalibFlag)
@@ -214,54 +93,65 @@ void motion_control_task(void *pvParameters)
 			}
 			vTaskDelay(10/portTICK_PERIOD_MS);
 			accelCalibFlag = 1;
-//    		uart_printf("calib value: %.1f\n", gyroCalibVal[X_AXIS_INDEX]);
 		}
 
     	if((gyroCalibFlag == 1)&&(accelCalibFlag == 1))
     	{
+
+#if CALC_WORK_TIME
+if(workCount==0)
+	uart_printf("*%d\n",millis());
+#endif
+
+    		if(magReadCount>=2)
+			{
+				if(magneto_measurement_read(magRawData)<0)
+					uart_printf("magnetometer read fail\n");
+				magReadCount=0;
+				vTaskDelay(1/portTICK_PERIOD_MS);
+
+			}
+			magReadCount++;
+
     		if(imu_raw_measurement_read(accelRawData, gyroRawData)<0)
     			uart_printf("imu read fail\n");
 
-    		accelRawData[X_AXIS_INDEX] = accelRawData[X_AXIS_INDEX]+accelCalibVal[X_AXIS_INDEX];
-			accelRawData[Y_AXIS_INDEX] = accelRawData[Y_AXIS_INDEX]+accelCalibVal[Y_AXIS_INDEX];
-			accelRawData[Z_AXIS_INDEX] = accelRawData[Z_AXIS_INDEX]+accelCalibVal[Z_AXIS_INDEX];
+    		accel_caliberate(accelRawData, accelCalibVal);
 
-			accelFiltered[X_AXIS_INDEX] = (accelAlpha*accelRawData[X_AXIS_INDEX]) + ((1-accelAlpha)*accelFiltered[X_AXIS_INDEX]);
-			accelFiltered[Y_AXIS_INDEX] = (accelAlpha*accelRawData[Y_AXIS_INDEX]) + ((1-accelAlpha)*accelFiltered[Y_AXIS_INDEX]);
-			accelFiltered[Z_AXIS_INDEX] = (accelAlpha*accelRawData[Z_AXIS_INDEX]) + ((1-accelAlpha)*accelFiltered[Z_AXIS_INDEX]);
+    		low_pass_filter(accelRawData[X_AXIS_INDEX], &accelFiltered[X_AXIS_INDEX], accelFilterAlpha);
+    		low_pass_filter(accelRawData[Y_AXIS_INDEX], &accelFiltered[Y_AXIS_INDEX], accelFilterAlpha);
+    		low_pass_filter(accelRawData[Z_AXIS_INDEX], &accelFiltered[Z_AXIS_INDEX], accelFilterAlpha);
 
-			gyroRawData[X_AXIS_INDEX] = (gyroRawData[X_AXIS_INDEX])-gyroCalibVal[X_AXIS_INDEX];
-			gyroRawData[Y_AXIS_INDEX] = (gyroRawData[Y_AXIS_INDEX])-gyroCalibVal[Y_AXIS_INDEX];
-			gyroRawData[Z_AXIS_INDEX] = (gyroRawData[Z_AXIS_INDEX])-gyroCalibVal[Z_AXIS_INDEX];
+    		gyro_caliberate(gyroRawData, gyroCalibVal);
 
 			//convert to radians/second
-			gyroRadPerSec_X = (((float)gyroRawData[X_AXIS_INDEX])*M_PI)/180;
-			gyroRadPerSec_Y = (((float)gyroRawData[Y_AXIS_INDEX])*M_PI)/180;
-			gyroRadPerSec_Z = (((float)gyroRawData[Z_AXIS_INDEX])*M_PI)/180;
+    		gyroRawRadPerSec[X_AXIS_INDEX] = convert_degrees_to_radians((float)gyroRawData[X_AXIS_INDEX]);
+    		gyroRawRadPerSec[Y_AXIS_INDEX] = convert_degrees_to_radians((float)gyroRawData[Y_AXIS_INDEX]);
+    		gyroRawRadPerSec[Z_AXIS_INDEX] = convert_degrees_to_radians((float)gyroRawData[Z_AXIS_INDEX]);
 
-			for(j=0;j<20;j++)
+
+			for(j=0;j<5;j++)
 			{
-//				MadgwickAHRSupdateIMU(gyroRadPerSec_X, gyroRadPerSec_Y, gyroRadPerSec_Z,
-//						(float)accelRawData[X_AXIS_INDEX], (float)accelRawData[Y_AXIS_INDEX], (float)accelRawData[Z_AXIS_INDEX]);
-				MadgwickAHRSupdateIMU(gyroRadPerSec_X, gyroRadPerSec_Y, gyroRadPerSec_Z,
-						accelFiltered[X_AXIS_INDEX], accelFiltered[Y_AXIS_INDEX], accelFiltered[Z_AXIS_INDEX]);
-				Madgwick_computeAngles();
+				MadgwickAHRSupdate(gyroRawRadPerSec[X_AXIS_INDEX], gyroRawRadPerSec[Y_AXIS_INDEX], gyroRawRadPerSec[Z_AXIS_INDEX],
+								   accelFiltered[X_AXIS_INDEX], accelFiltered[Y_AXIS_INDEX], accelFiltered[Z_AXIS_INDEX],
+								   magRawData[X_AXIS_INDEX], magRawData[Y_AXIS_INDEX], magRawData[Z_AXIS_INDEX]);
 			}
+			Madgwick_computeAngles();
 
-//			roll_filtered = low_pass_filter(roll, roll_filtered, 0.4);
-//			pitch_filtered = low_pass_filter(roll, pitch_filtered, 0.4);
-//			yaw_filtered = low_pass_filter(roll, yaw_filtered, 0.4);
-			//roll_filtered = (0.4*roll)+((1-0.4)*roll_filtered);
+#if CALC_WORK_TIME
+workCount++;
+if(workCount == 10)
+{
+	uart_printf("#%d\n",millis());
+	workCount=0;
+}
+#endif
 
 			i++;
-			if(i==8)
+			if(i==20)
 			{
-//				uart_printf("%df \n", accelRawData[X_AXIS_INDEX]);
-//				uart_printf("%.1f \n", accelFiltered[X_AXIS_INDEX]);
-
-				uart_printf("%.1f\n", roll*DEGREE_CNVRT_CONST);
+				uart_printf("%.1f\n", convert_radians_to_degrees(roll));
 //				uart_printf("roll: %.1f  pitch: %.1f  yaw: %.1f\n", roll_filtered*DEGREE_CNVRT_CONST, pitch_filtered*DEGREE_CNVRT_CONST, yaw_filtered*DEGREE_CNVRT_CONST);
-//				uart_printf("x: %.1f  y: %.1f  z: %.1f\n", (float)gyroRawData[X_AXIS_INDEX], (float)gyroRawData[Y_AXIS_INDEX], (float)gyroRawData[Z_AXIS_INDEX]);
 
 				i=0;
 			}
@@ -285,11 +175,25 @@ void drone_init_task(void *pvParameters)
 		uart_printf("mpu6050 init failed.\n");
 		while(1);
 	}
+
+	if(mpu6050_aux_i2c_bus_host_access(MPU6050_HOST_AUX_BUS_CONNECT)<0)
+	{
+		uart_printf("aux bus connect failed.\n");
+		while(1);
+	}
+
+	if(hmc5883l_init()<0)
+	{
+		uart_printf("magnetometer init failed.\n");
+		while(1);
+	}
+
 	else
 	{
 		uart_printf("drone init complete.\n");
 		vTaskDelay(2000/portTICK_PERIOD_MS);
-		xTaskCreate(motion_control_task, "motion_control_task", 500, NULL, 1, NULL );
+		xTaskCreate(motion_control_task, "motion_control_task", 1000, NULL, 1, NULL );
+		xTaskCreate(test_task, "test_task", 500, NULL, 1, NULL );
 		vTaskDelete(NULL);
 	}
 }

@@ -8,8 +8,9 @@
 #ifndef GY87_MODULE_H_
 #define GY87_MODULE_H_
 
-#define MPU6050_ID 0x68
-#define BMP180_ID 0x77
+#define MPU6050_ID	0x68
+#define BMP180_ID	0x77
+#define HMC5883L_ID	0x1E
 
 /* gyro/accelerometer full scale range defines for mpu6050_init function*/
 #define FS_SEL0	0x00 /* 250 degrees per second/2g */
@@ -29,18 +30,22 @@
 #define FS_SEL2_ACCEL_SCALE	4096
 #define FS_SEL3_ACCEL_SCALE	2048
 
-/* 180/pi=57.2957 */
-#define DEGREE_CNVRT_CONST 57.2957
-
 /* defines for the accelerometer and gyro data array indexes */
 #define X_AXIS_INDEX 0
 #define Y_AXIS_INDEX 1
 #define Z_AXIS_INDEX 2
 
+/* defines for mpu6050_aux_i2c_bus_host_access function */
+#define MPU6050_HOST_AUX_BUS_CONNECT 	1
+#define MPU6050_HOST_AUX_BUS_DISCONNECT	0
+
 
 int8_t mpu6050_init(uint8_t gyroFullScaleRange, uint8_t accelFullScaleRange);
+int8_t mpu6050_aux_i2c_bus_host_access(uint8_t aux_i2c_bus_status);
+int8_t hmc5883l_init(void);
 int8_t gyro_measurement_read(int16_t* gyroBuffer);
 int8_t accel_measurement_read(int16_t* accelBuffer);
+int8_t magneto_measurement_read(int16_t* magnetoBuffer);
 int8_t imu_raw_measurement_read(int16_t* accelBuffer, int16_t* gyroBuffer);
 int8_t gyro_calc_bias(float* gyroCalibData);
 int8_t accel_calc_bias(float* accelCalibData);

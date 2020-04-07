@@ -21,8 +21,13 @@
 //---------------------------------------------------------------------------------------------------
 // Definitions
 
-#define sampleFreq	1180.0f		// sample frequency in Hz   //512.0f
-#define betaDef		32.0f		// 2 * proportional gain	//0.1f
+//default- freq:512.0f, betaDef:0.1f
+//(20cycle- freq:1180.0f, betaDef:32.0f)
+//(10cycle- freq:2267.57f, betaDef:20.0f, no magnetometer) - worked very well.
+
+
+#define sampleFreq	847.45f		// sample frequency in Hz
+#define betaDef		60.0f			// 2 * proportional gain
 
 //---------------------------------------------------------------------------------------------------
 // Variable definitions

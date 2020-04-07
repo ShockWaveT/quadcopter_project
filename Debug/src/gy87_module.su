@@ -1,6 +1,9 @@
 gy87_module.c:29:8:mpu6050_init	24	static
-gy87_module.c:56:8:gyro_measurement_read	24	static
-gy87_module.c:81:8:accel_measurement_read	24	static
-gy87_module.c:105:8:imu_raw_measurement_read	32	static
-gy87_module.c:135:8:gyro_calc_bias	40	static
-gy87_module.c:172:8:accel_calc_bias	40	static
+gy87_module.c:59:8:mpu6050_aux_i2c_bus_host_access	24	static
+gy87_module.c:94:8:hmc5883l_init	16	static
+gy87_module.c:120:8:gyro_measurement_read	24	static
+gy87_module.c:145:8:accel_measurement_read	24	static
+gy87_module.c:170:8:magneto_measurement_read	24	static
+gy87_module.c:196:8:imu_raw_measurement_read	32	static
+gy87_module.c:226:8:gyro_calc_bias	40	static
+gy87_module.c:263:8:accel_calc_bias	40	static

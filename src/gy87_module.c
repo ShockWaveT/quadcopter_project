@@ -48,6 +48,70 @@ int8_t mpu6050_init(uint8_t gyroFullScaleRange, uint8_t accelFullScaleRange)
 
 
 /************************************************************************//*
+ * connects or disconnects the mpu6050 auxiliary i2c bus to the host
+ * MCU i2c bus
+ *
+ * @param aux_i2c_bus_status: connects/disconnect command.
+ * MPU6050_HOST_AUX_BUS_CONNECT or MPU6050_HOST_AUX_BUS_DISCONNECT
+ * @retval 0 on success, -1 on timeout.
+ *
+ **************************************************************************/
+int8_t mpu6050_aux_i2c_bus_host_access(uint8_t aux_i2c_bus_status)
+{
+	int8_t returnCode=0;
+
+	if(aux_i2c_bus_status == 1)
+	{
+		/*disable mpu6050 master*/
+		returnCode = i2c_slave_mem_write(MPU6050_ID, 0x6A, 0x00);
+		if(returnCode == -1)
+			return -1;
+
+		/*enable auxiliary i2c bus access*/
+		returnCode = i2c_slave_mem_write(MPU6050_ID, 0x37, 0x02);
+		if(returnCode == -1)
+			return -1;
+	}
+
+	else if(aux_i2c_bus_status == 0)
+	{
+		/*disable mpu6050 master*/
+		returnCode = i2c_slave_mem_write(MPU6050_ID, 0x6A, 0x20);
+		if(returnCode == -1)
+			return -1;
+
+		/*enable auxiliary i2c bus access*/
+		returnCode = i2c_slave_mem_write(MPU6050_ID, 0x37, 0x00);
+		if(returnCode == -1)
+			return -1;
+	}
+}
+
+/************************************************************************//*
+ * initializes the HMC5883L magnetometer sensor
+ * @retval 0 on success, -1 on timeout.
+ **************************************************************************/
+int8_t hmc5883l_init(void)
+{
+	int8_t returnCode=0;
+
+	returnCode = i2c_slave_mem_write(HMC5883L_ID, 0x00, 0x78);
+	if(returnCode == -1)
+		return -1;
+
+	returnCode = i2c_slave_mem_write(HMC5883L_ID, 0x01, 0xA0);
+	if(returnCode == -1)
+		return -1;
+
+	returnCode = i2c_slave_mem_write(HMC5883L_ID, 0x02, 0x00);
+	if(returnCode == -1)
+		return -1;
+
+	return 0;
+}
+
+
+/************************************************************************//*
  * Reads the raw X, Y and Z angular velocity from gyro.
  *
  * @param gyroBuffer: buffer for the read data to be stored.
@@ -95,6 +159,33 @@ int8_t accel_measurement_read(int16_t* accelBuffer)
 	else
 		return -1;
 }
+
+
+/************************************************************************//*
+ * Reads the raw X, Y and Z values from HMC5883L magnetometer.
+ *
+ * @param magnetoBuffer: buffer for the read data to be stored.
+ * @retval 0 on success, -1 on timeout.
+ **************************************************************************/
+int8_t magneto_measurement_read(int16_t* magnetoBuffer)
+{
+	uint8_t magnetoReadValues[6];
+	int8_t errorValue;
+
+	errorValue = i2c_slave_mem_read(HMC5883L_ID, 0x03, magnetoReadValues, 6);
+
+	if(errorValue == 0)
+	{
+		/* in HMC5883L data registers are in the order X, Z, Y */
+		magnetoBuffer[0] = (magnetoReadValues[0]<<8)|magnetoReadValues[1];//x_out
+		magnetoBuffer[2] = (magnetoReadValues[2]<<8)|magnetoReadValues[3];//z_out
+		magnetoBuffer[1] = (magnetoReadValues[4]<<8)|magnetoReadValues[5];//y_out
+		return 0;
+	}
+	else
+		return -1;
+}
+
 
 /************************************************************************//*
  * Reads the raw X, Y and Z values from accelerometer and gyro.

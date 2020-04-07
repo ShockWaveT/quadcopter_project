@@ -13,15 +13,16 @@
  * current raw data.
  *
  * @param CurrentData: unfiltered data/raw data
- * @param PreviousData: previously filtered data
+ * @param filteredData: previously filtered data. new filtered data
+ * is stored here
  * @param filterCoeff: filter coefficient(the lower this becomes the slower
  * the filter)
  *
- * @retval new filtered data.
+ * @retval none.
  **************************************************************************/
-float low_pass_filter(float CurrentData, float PreviousData, float filterCoeff)
+void low_pass_filter(float CurrentData, float* filteredData, float filterCoeff)
 {
-	return (filterCoeff*CurrentData)+((1-filterCoeff)*PreviousData);
+	(*filteredData) = (filterCoeff*CurrentData)+((1-filterCoeff)*(*filteredData));
 }
 
 
@@ -67,8 +68,27 @@ void accel_caliberate(int16_t* accelData, float* calibValue)
  *
  * @retval value in radians.
  **************************************************************************/
-float convert_degrees_to_radians(uint32_t degrees)
+float convert_degrees_to_radians(float degrees)
 {
-	return (((float)degrees)*M_PI)/180;
+	/* radians = (degrees*PI)/180 */
+	//return (degrees*M_PI)/180;
+	return (degrees*0.01745);
+}
+
+
+/************************************************************************//*
+ * can be used to convert radians to degrees or radians/second to
+ * degrees/second
+ *
+ * @param radianVal: value to be converted in radians
+ *
+ * @retval value in degrees.
+ **************************************************************************/
+float convert_radians_to_degrees(float radianVal)
+{
+	/* degrees = (radians*180)/PI */
+	/* return (radianVal*180)/M_PI */;
+	return (radianVal*57.29577);
+
 }
 
