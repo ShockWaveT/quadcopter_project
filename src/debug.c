@@ -1,15 +1,19 @@
-/*
- * debug.c
- *
- *  Created on: 21-Feb-2020
- *      Author: ASUS
+/**
+ * @file 	debug.c
+ * @date 	21-Feb-2020
+ * @author 	Arun Cheriyan
  */
-
 #include "stm32f10x.h"
 #include "stm32f10x_rcc.h"
 #include "stm32f10x_gpio.h"
 #include "debug.h"
 
+
+/************************************************************************//*
+ * initilizes the debug led gpio.
+ *
+ * @return none.
+ **************************************************************************/
 void debug_led_init(void)
 {
 	GPIO_InitTypeDef GPIO_InitStructure;

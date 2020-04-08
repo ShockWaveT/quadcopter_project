@@ -1,4 +1,4 @@
-/*
+/**
  * @file 	i2c_comm.c
  * @date 	09-Feb-2020
  * @author 	Arun Cheriyan

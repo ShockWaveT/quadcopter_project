@@ -1,15 +1,20 @@
-/*
- * uart_comm.c
- *
- *  Created on: 21-Feb-2020
- *      Author: ASUS
+/**
+ * @file 	uart_comm.c
+ * @date 	21-Feb-2020
+ * @author 	Arun Cheriyan
  */
-
 #include "stm32f10x.h"
 #include "stm32f10x_rcc.h"
 #include "stm32f10x_gpio.h"
 #include "uart_comm.h"
 
+
+/************************************************************************//*
+ * Initializes the USART1 peripheral for console operation.
+ *
+ * @param baudRate: uart baud rate
+ * @return none.
+ **************************************************************************/
 void uart_console_init(uint32_t baudRate)
 {
 	GPIO_InitTypeDef GPIO_InitStructure;

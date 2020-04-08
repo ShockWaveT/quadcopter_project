@@ -1,4 +1,4 @@
-/*
+/**
  * @file 	imu_utils.c
  * @date 	05-April-2020
  * @author 	Arun Cheriyan

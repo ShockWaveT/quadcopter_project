@@ -1,10 +1,8 @@
-/*
- * main.c
- *
- * Created on: 09-Feb-2020
- * Author: Arun
+/**
+ * @file 	main.c
+ * @date 	09-Feb-2020
+ * @author 	Arun Cheriyan
  */
-
 #include <math.h>
 #include "stm32f10x.h"
 #include "stm32f10x_rcc.h"
@@ -55,10 +53,6 @@ uint8_t workCount=0;
 	float accelFiltered[3]={0};
 	float gyroRawRadPerSec[3] = {0};
 
-	float gyroRadPerSec_X = 0;
-	float gyroRadPerSec_Y = 0;
-	float gyroRadPerSec_Z = 0;
-
 	uint8_t gyroCalibFlag=0;
 	float gyroCalibVal[3]={0};
 
@@ -97,7 +91,6 @@ uint8_t workCount=0;
 
     	if((gyroCalibFlag == 1)&&(accelCalibFlag == 1))
     	{
-
 #if CALC_WORK_TIME
 if(workCount==0)
 	uart_printf("*%d\n",millis());

@@ -1,10 +1,8 @@
-/*
- * timer_config.c
- *
- *  Created on: 08-Jan-2020
- *      Author: arun
+/**
+ * @file 	timer_config.c
+ * @date 	08-Jan-2020
+ * @author 	Arun Cheriyan
  */
-
 #include "stm32f10x.h"
 #include "stm32f10x_rcc.h"
 #include "stm32f10x_gpio.h"
@@ -17,8 +15,11 @@ volatile uint32_t timeOutTimerAlarmTime=0;
 volatile uint32_t timeOutTimerStartTime=0;
 volatile uint8_t timeOutTimerAlarmStatus=0;
 
-
-
+/************************************************************************//*
+ * Timer 3 ISR
+ *
+ * @return none.
+ **************************************************************************/
 void TIM3_IRQHandler(void)
 {
     if(TIM_GetITStatus(TIM3, TIM_IT_Update) != RESET)
@@ -34,6 +35,12 @@ void TIM3_IRQHandler(void)
     TIM_ClearITPendingBit(TIM3, TIM_IT_Update);
 }
 
+
+/************************************************************************//*
+ * Initializes timer 3 peripheral for delay and millis functions.
+ *
+ * @return none.
+ **************************************************************************/
 void timer3_init(void)
 {
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
@@ -70,6 +77,12 @@ void timer3_init(void)
 	TIM_Cmd(TIM3, ENABLE);
 }
 
+
+/************************************************************************//*
+ * initializes timer 2 to output PWM signals
+ *
+ * @return none.
+ **************************************************************************/
 void motors_pwm_init(void)
 {
 	TIM_TimeBaseInitTypeDef  TIM_TimeBaseStructure;
@@ -122,6 +135,15 @@ void motors_pwm_init(void)
 	TIM_Cmd(TIM2, ENABLE);
 }
 
+
+/************************************************************************//*
+ * sets the pwm duty cycle for specified channel
+ *
+ * @param channelID: channel ID.
+ * this can be PWM_CHANNEL1, PWM_CHANNEL2, PWM_CHANNEL3, PWM_CHANNEL4
+ * @param speedPercentage: duty cycle in percentage value(0-100)
+ * @return none.
+ **************************************************************************/
 void motor_pwm_speed_set(pwm_channels_t channelID, uint8_t speedPercentage)
 {
 	uint32_t pwm_value;
@@ -137,11 +159,25 @@ void motor_pwm_speed_set(pwm_channels_t channelID, uint8_t speedPercentage)
 		TIM_SetCompare4(TIM2, pwm_value);
 }
 
+
+/************************************************************************//*
+ * for tracking the current time
+ *
+ * @retval current time in milliseconds
+ **************************************************************************/
 uint32_t millis(void)
 {
 	return elapsed_ms;
 }
 
+
+/************************************************************************//*
+ * produces delay in the program by continuously looping. returns when
+ * given time has elapsed.
+ *
+ * @param delay_ms: delay time in milli seconds
+ * @return none.
+ **************************************************************************/
 void delay_ms(uint32_t delay_ms)
 {
 	uint32_t currentTime_ms;
@@ -156,6 +192,13 @@ void delay_ms(uint32_t delay_ms)
 	}
 }
 
+
+/************************************************************************//*
+ * sets an alarm to so that timeouts can be implemented
+ *
+ * @param alarmTime_ms: timeout time in milliseconds.
+ * @return none.
+ **************************************************************************/
 void timeout_alarm_set(uint32_t alarmTime_ms)
 {
 	timeOutTimerStartTime = millis();
@@ -164,31 +207,33 @@ void timeout_alarm_set(uint32_t alarmTime_ms)
 	timeOutTimerAlarmStatus = 0;
 }
 
+
+/************************************************************************//*
+ * checks if timeout has occurred
+ *
+ * retval 1 if timeout happened. else 0.
+ **************************************************************************/
 uint8_t timeout_alarm_status_check(void)
 {
 	return timeOutTimerAlarmStatus;
 }
 
+
+/************************************************************************//*
+ * turns off the alarm.
+ *
+ * @return none.
+ **************************************************************************/
 void timeout_alarm_off(void)
 {
 	timeOutTimerStatus = 0;
 	timeOutTimerAlarmStatus = 0;
 }
 
-//uint8_t timeout_wait(uint32_t* timeoutVar, uint32_t timeOut_ms)
-//{
-//	delay_ms(1);
-//	(*timeoutVar)++;
-//	//timeout occurred
-//	if((*timeoutVar)>timeOut_ms)
-//	{
-//		(*timeoutVar)=0;
-//		return 0;
-//	}
-//	else
-//		return 1;
-//}
 
+/************************************************************************//*
+ *
+ **************************************************************************/
 uint8_t timeout_wait(uint32_t* timeoutVar, uint32_t timeOut_ms)
 {
 	static uint32_t startTime_ms;

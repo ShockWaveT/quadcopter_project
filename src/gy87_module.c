@@ -1,4 +1,4 @@
-/*
+/**
  * @file 	gy87_module.c
  * @date 	05-Jan-2020
  * @author 	Arun Cheriyan
