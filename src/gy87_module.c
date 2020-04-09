@@ -85,6 +85,7 @@ int8_t mpu6050_aux_i2c_bus_host_access(uint8_t aux_i2c_bus_status)
 		if(returnCode == -1)
 			return -1;
 	}
+	return 0;
 }
 
 /************************************************************************//*
@@ -287,5 +288,142 @@ int8_t accel_calc_bias(float* accelCalibData)
 
 	return 0;
 }
+
+
+/************************************************************************//*
+ * calculates magnetometer maximum and minimum readings for each axis.
+ * these values can then be used to caliberate the magnetometer.
+ *
+ * @param magMax: pointer to the array where the highest read values for
+ * each axis is to be stored.
+ * @param magMin: pointer to the array where the lowest read values for
+ * each axis is to be stored.
+ *
+ * @retval 0 if success, -1 on failure.
+ **************************************************************************/
+int magnetometer_read_min_and_max_values(int16_t* magMax, int16_t* magMin)
+{
+	int16_t madData[3];
+	uint32_t maxSampleCount=200;
+
+	magMax[X_AXIS_INDEX]=0;
+	magMax[Y_AXIS_INDEX]=0;
+	magMax[Z_AXIS_INDEX]=0;
+	magMin[X_AXIS_INDEX]=0;
+	magMin[Y_AXIS_INDEX]=0;
+	magMin[Z_AXIS_INDEX]=0;
+
+	while(maxSampleCount>0)
+	{
+		if(magneto_measurement_read(madData)<0)
+			return -1;
+
+		if(madData[X_AXIS_INDEX] > magMax[X_AXIS_INDEX])
+			magMax[X_AXIS_INDEX] = madData[X_AXIS_INDEX];
+
+		if(madData[Y_AXIS_INDEX] > magMax[Y_AXIS_INDEX])
+			magMax[Y_AXIS_INDEX] = madData[Y_AXIS_INDEX];
+
+		if(madData[Z_AXIS_INDEX] > magMax[Z_AXIS_INDEX])
+			magMax[Z_AXIS_INDEX] = madData[Z_AXIS_INDEX];
+
+		if(madData[X_AXIS_INDEX] < magMin[X_AXIS_INDEX])
+			magMin[X_AXIS_INDEX] = madData[X_AXIS_INDEX];
+
+		if(madData[Y_AXIS_INDEX] < magMin[Y_AXIS_INDEX])
+			magMin[Y_AXIS_INDEX] = madData[Y_AXIS_INDEX];
+
+		if(madData[Z_AXIS_INDEX] < magMin[Z_AXIS_INDEX])
+			magMin[Z_AXIS_INDEX] = madData[Z_AXIS_INDEX];
+
+		delay_ms(50);
+		maxSampleCount--;
+	}
+	return 0;
+}
+
+
+/************************************************************************//*
+ * removes bias error from raw gyro data. bias must be calculated
+ * previously
+ *
+ * @param GyroData: raw gyro data array
+ * @param calibValue: array of previously calculated gyro bias
+ *
+ * @retval none.
+ **************************************************************************/
+void gyro_caliberate(int16_t* gyroData, float* calibValue)
+{
+	gyroData[0] = (gyroData[0])-calibValue[0];
+	gyroData[1] = (gyroData[1])-calibValue[1];
+	gyroData[2] = (gyroData[2])-calibValue[2];
+}
+
+
+/************************************************************************//*
+ * removes bias error from raw accelerometer data. bias must be calculated
+ * previously
+ *
+ * @param accelData: raw accelerometer data array
+ * @param calibValue: array of previously calculated acceleromter bias
+ *
+ * @retval none.
+ **************************************************************************/
+void accel_caliberate(int16_t* accelData, float* calibValue)
+{
+	accelData[0] = accelData[0]+calibValue[0];
+	accelData[1] = accelData[1]+calibValue[1];
+	accelData[2] = accelData[2]+calibValue[2];
+}
+
+
+/************************************************************************//*
+ * removes bias error from raw accelerometer data. bias must be calculated
+ * previously
+ *
+ * @param magData: raw magnetometer data array. corrected data is written
+ * to this same variable.
+ * @param magMax: pointer to the array where the highest read values for
+ * each axis is to be stored.
+ * @param magMin: pointer to the array where the lowest read values for
+ * each axis is to be stored.
+ *
+ * @retval none.
+ **************************************************************************/
+void magnetometer_caliberate(int16_t* magData, int16_t* magMax, int16_t* magMin)
+{
+	int16_t offset[3];
+	int16_t avgDelta[3];
+	float scaleVal[3];
+	float totalAvgDelta;
+
+	/*
+	 * calculate magnetometer offset. useful for calculating soft
+	 * and hard iron distortion.
+	 * refer: https://appelsiini.net/2018/calibrate-magnetometer
+	 */
+	offset[X_AXIS_INDEX] = (magMax[X_AXIS_INDEX] + magMin[X_AXIS_INDEX])/2;
+	offset[Y_AXIS_INDEX] = (magMax[Y_AXIS_INDEX] + magMin[Y_AXIS_INDEX])/2;
+	offset[Z_AXIS_INDEX] = (magMax[Z_AXIS_INDEX] + magMin[Z_AXIS_INDEX])/2;
+
+	/* below lines are for calculating soft iron distortion*/
+	avgDelta[X_AXIS_INDEX] = (magMax[X_AXIS_INDEX] - magMin[X_AXIS_INDEX])/2;
+	avgDelta[Y_AXIS_INDEX] = (magMax[Y_AXIS_INDEX] - magMin[Y_AXIS_INDEX])/2;
+	avgDelta[Z_AXIS_INDEX] = (magMax[Z_AXIS_INDEX] - magMin[Z_AXIS_INDEX])/2;
+
+	totalAvgDelta = avgDelta[X_AXIS_INDEX] + avgDelta[Y_AXIS_INDEX] + avgDelta[Z_AXIS_INDEX];
+
+	scaleVal[X_AXIS_INDEX] = totalAvgDelta / avgDelta[X_AXIS_INDEX];
+	scaleVal[Y_AXIS_INDEX] = totalAvgDelta / avgDelta[Y_AXIS_INDEX];
+	scaleVal[Z_AXIS_INDEX] = totalAvgDelta / avgDelta[Z_AXIS_INDEX];
+
+	/* correct the raw magnetometer readings */
+	magData[X_AXIS_INDEX] = (magData[X_AXIS_INDEX] - offset[X_AXIS_INDEX]) * scaleVal[X_AXIS_INDEX];
+	magData[Y_AXIS_INDEX] = (magData[Y_AXIS_INDEX] - offset[Y_AXIS_INDEX]) * scaleVal[Y_AXIS_INDEX];
+	magData[Z_AXIS_INDEX] = (magData[Z_AXIS_INDEX] - offset[Z_AXIS_INDEX]) * scaleVal[Z_AXIS_INDEX];
+}
+
+
+
 
 

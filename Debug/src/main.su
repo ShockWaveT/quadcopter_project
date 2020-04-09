@@ -1,7 +1,7 @@
-main.c:31:6:test_task	24	static
-main.c:44:6:motion_control_task	144	static
-main.c:157:6:drone_init_task	24	static
-main.c:194:5:main	16	static
-main.c:221:6:vApplicationMallocFailedHook	4	static
-main.c:231:6:vApplicationStackOverflowHook	16	static
-main.c:242:6:vApplicationIdleHook	16	static
+main.c:31:6:test_task	56	static
+main.c:64:6:motion_control_task	144	static
+main.c:173:6:drone_init_task	24	static
+main.c:210:5:main	16	static
+main.c:237:6:vApplicationMallocFailedHook	4	static
+main.c:247:6:vApplicationStackOverflowHook	16	static
+main.c:258:6:vApplicationIdleHook	16	static

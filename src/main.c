@@ -32,11 +32,31 @@ void test_task(void *pvParameters)
 {
 	int8_t errorValue;
 
+	int16_t magMax[3];
+	int16_t magMin[3];
+
 	while(1)
 	{
-		errorValue++;
-		if(errorValue == 100000)
-			uart_printf("test task\n");
+//		errorValue++;
+//		if(errorValue == 100000)
+//			uart_printf("test task\n");
+
+		uart_printf("start moving the magnetometer\n");
+
+		if(magnetometer_read_min_and_max_values(magMax, magMin) < 0)
+			uart_printf("mag error during calibration\n");
+		else
+			uart_printf("x_offset: %d  y_offset: %d  z_offset: %d\n",
+						(magMax[X_AXIS_INDEX]+magMin[X_AXIS_INDEX])/2,
+						(magMax[Y_AXIS_INDEX]+magMin[Y_AXIS_INDEX])/2,
+						(magMax[Z_AXIS_INDEX]+magMin[Z_AXIS_INDEX])/2);
+
+		uart_printf("x_max: %d  x_min: %d  y_max: %d  y_min: %d   z_max: %d  z_min: %d\n",
+					magMax[X_AXIS_INDEX], magMin[X_AXIS_INDEX],
+					magMax[Y_AXIS_INDEX], magMin[Y_AXIS_INDEX],
+					magMax[Z_AXIS_INDEX], magMin[Z_AXIS_INDEX]);
+
+		vTaskDelay(60000/portTICK_PERIOD_MS);
 
 	}
 }
@@ -52,12 +72,10 @@ uint8_t workCount=0;
 	float accelCalibVal[3]={0};
 	float accelFiltered[3]={0};
 	float gyroRawRadPerSec[3] = {0};
-
 	uint8_t gyroCalibFlag=0;
 	float gyroCalibVal[3]={0};
 
 	extern volatile float roll, pitch, yaw;
-
 	const float accelFilterAlpha = 0.05;
 
 	uint32_t i=0,j=0;
@@ -143,9 +161,7 @@ if(workCount == 10)
 			i++;
 			if(i==20)
 			{
-				uart_printf("%.1f\n", convert_radians_to_degrees(roll));
-//				uart_printf("roll: %.1f  pitch: %.1f  yaw: %.1f\n", roll_filtered*DEGREE_CNVRT_CONST, pitch_filtered*DEGREE_CNVRT_CONST, yaw_filtered*DEGREE_CNVRT_CONST);
-
+				uart_printf("%.1f\n", convert_radians_to_degrees(yaw));
 				i=0;
 			}
 
@@ -185,7 +201,7 @@ void drone_init_task(void *pvParameters)
 	{
 		uart_printf("drone init complete.\n");
 		vTaskDelay(2000/portTICK_PERIOD_MS);
-		xTaskCreate(motion_control_task, "motion_control_task", 1000, NULL, 1, NULL );
+//		xTaskCreate(motion_control_task, "motion_control_task", 1000, NULL, 1, NULL );
 		xTaskCreate(test_task, "test_task", 500, NULL, 1, NULL );
 		vTaskDelete(NULL);
 	}

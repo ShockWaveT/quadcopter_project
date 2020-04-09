@@ -49,5 +49,9 @@ int8_t magneto_measurement_read(int16_t* magnetoBuffer);
 int8_t imu_raw_measurement_read(int16_t* accelBuffer, int16_t* gyroBuffer);
 int8_t gyro_calc_bias(float* gyroCalibData);
 int8_t accel_calc_bias(float* accelCalibData);
+int magnetometer_read_min_and_max_values(int16_t* magMax, int16_t* magMin);
+void gyro_caliberate(int16_t* gyroData, float* calibValue);
+void accel_caliberate(int16_t* accelData, float* calibValue);
+void magnetometer_caliberate(int16_t* magData, int16_t* magMax, int16_t* magMin);
 
 #endif /* GY87_MODULE_H_ */

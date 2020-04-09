@@ -27,40 +27,6 @@ void low_pass_filter(float CurrentData, float* filteredData, float filterCoeff)
 
 
 /************************************************************************//*
- * removes bias error from raw gyro data. bias must be calculated
- * previously
- *
- * @param GyroData: raw gyro data array
- * @param calibValue: array of previously calculated gyro bias
- *
- * @retval none.
- **************************************************************************/
-void gyro_caliberate(int16_t* gyroData, float* calibValue)
-{
-	gyroData[0] = (gyroData[0])-calibValue[0];
-	gyroData[1] = (gyroData[1])-calibValue[1];
-	gyroData[2] = (gyroData[2])-calibValue[2];
-}
-
-
-/************************************************************************//*
- * removes bias error from raw accelerometer data. bias must be calculated
- * previously
- *
- * @param accelData: raw accelerometer data array
- * @param calibValue: array of previously calculated acceleromter bias
- *
- * @retval none.
- **************************************************************************/
-void accel_caliberate(int16_t* accelData, float* calibValue)
-{
-	accelData[0] = accelData[0]+calibValue[0];
-	accelData[1] = accelData[1]+calibValue[1];
-	accelData[2] = accelData[2]+calibValue[2];
-}
-
-
-/************************************************************************//*
  * can be used to convert degrees to radians or dgrees/second to
  * radians/second
  *
