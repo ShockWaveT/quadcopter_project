@@ -8,8 +8,8 @@
 #ifndef TIMER_CONFIG_H_
 #define TIMER_CONFIG_H_
 
-#define MOTOR_TIM_ARR_REG_VAL	(200-1)
-#define MOTOR_TIM_PRESCALER_VAL	(2400-1)
+#define MOTOR_TIM_ARR_REG_VAL	(600-1)//200-1
+#define MOTOR_TIM_PRESCALER_VAL	(800-1)//
 
 
 typedef enum
@@ -23,7 +23,7 @@ typedef enum
 
 void timer3_init(void);
 void motors_pwm_init(void);
-void motor_pwm_speed_set(uint8_t channelID, uint8_t speedPercentage);
+void motor_pwm_speed_set(uint8_t channelID, float speedPercentage);
 uint32_t millis(void);
 void delay_ms(uint32_t delay_ms);
 uint8_t timeout_wait(uint32_t* timeoutVar, uint32_t timeOut_ms);

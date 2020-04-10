@@ -144,7 +144,7 @@ void motors_pwm_init(void)
  * @param speedPercentage: duty cycle in percentage value(0-100)
  * @return none.
  **************************************************************************/
-void motor_pwm_speed_set(pwm_channels_t channelID, uint8_t speedPercentage)
+void motor_pwm_speed_set(pwm_channels_t channelID, float speedPercentage)
 {
 	uint32_t pwm_value;
 

@@ -13,6 +13,7 @@
 #include "timer_config.h"
 #include "gy87_module.h"
 #include "uart_comm.h"
+#include "motors.h"
 #include "debug.h"
 
 /* FreeRTOS includes. */
@@ -37,9 +38,14 @@ void test_task(void *pvParameters)
 
 	while(1)
 	{
-		motor_pwm_speed_set(PWM_CHANNEL4, 4);
+//		motor_pwm_speed_set(PWM_CHANNEL4, 4);
+//		delay_ms(1000);
+//		motor_pwm_speed_set(PWM_CHANNEL4, 14);
+//		delay_ms(1000);
+
+		servo_set_position(PWM_CHANNEL4, 0);
 		delay_ms(1000);
-		motor_pwm_speed_set(PWM_CHANNEL4, 14);
+		servo_set_position(PWM_CHANNEL4, 180);
 		delay_ms(1000);
 
 //		errorValue++;

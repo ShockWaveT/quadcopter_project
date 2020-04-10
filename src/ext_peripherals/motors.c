@@ -8,10 +8,8 @@
 #include "timer_config.h"
 
 
-void servo_set_position(pwm_channels_t channelID, uint8_t degreeVal)
+void servo_set_position(pwm_channels_t channelID, float degreeVal)
 {
-
-
-	motor_pwm_speed_set(channelID, 5);
-
+	degreeVal = ((degreeVal*10)/180)+4;
+	motor_pwm_speed_set(channelID, degreeVal);
 }
