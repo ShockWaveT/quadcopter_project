@@ -37,26 +37,32 @@ void test_task(void *pvParameters)
 
 	while(1)
 	{
+		motor_pwm_speed_set(PWM_CHANNEL4, 4);
+		delay_ms(1000);
+		motor_pwm_speed_set(PWM_CHANNEL4, 14);
+		delay_ms(1000);
+
 //		errorValue++;
 //		if(errorValue == 100000)
 //			uart_printf("test task\n");
 
-		uart_printf("start moving the magnetometer\n");
 
-		if(magnetometer_read_min_and_max_values(magMax, magMin) < 0)
-			uart_printf("mag error during calibration\n");
-		else
-			uart_printf("x_offset: %d  y_offset: %d  z_offset: %d\n",
-						(magMax[X_AXIS_INDEX]+magMin[X_AXIS_INDEX])/2,
-						(magMax[Y_AXIS_INDEX]+magMin[Y_AXIS_INDEX])/2,
-						(magMax[Z_AXIS_INDEX]+magMin[Z_AXIS_INDEX])/2);
-
-		uart_printf("x_max: %d  x_min: %d  y_max: %d  y_min: %d   z_max: %d  z_min: %d\n",
-					magMax[X_AXIS_INDEX], magMin[X_AXIS_INDEX],
-					magMax[Y_AXIS_INDEX], magMin[Y_AXIS_INDEX],
-					magMax[Z_AXIS_INDEX], magMin[Z_AXIS_INDEX]);
-
-		vTaskDelay(60000/portTICK_PERIOD_MS);
+//		uart_printf("start moving the magnetometer\n");
+//
+//		if(magnetometer_read_min_and_max_values(magMax, magMin) < 0)
+//			uart_printf("mag error during calibration\n");
+//		else
+//			uart_printf("x_offset: %d  y_offset: %d  z_offset: %d\n",
+//						(magMax[X_AXIS_INDEX]+magMin[X_AXIS_INDEX])/2,
+//						(magMax[Y_AXIS_INDEX]+magMin[Y_AXIS_INDEX])/2,
+//						(magMax[Z_AXIS_INDEX]+magMin[Z_AXIS_INDEX])/2);
+//
+//		uart_printf("x_max: %d  x_min: %d  y_max: %d  y_min: %d   z_max: %d  z_min: %d\n",
+//					magMax[X_AXIS_INDEX], magMin[X_AXIS_INDEX],
+//					magMax[Y_AXIS_INDEX], magMin[Y_AXIS_INDEX],
+//					magMax[Z_AXIS_INDEX], magMin[Z_AXIS_INDEX]);
+//
+//		vTaskDelay(60000/portTICK_PERIOD_MS);
 
 	}
 }
@@ -64,16 +70,22 @@ void test_task(void *pvParameters)
 void motion_control_task(void *pvParameters)
 {
 #define CALC_WORK_TIME 0
+#define DO_AUTOMATIC_MAG_CALIB 0
+
 #if CALC_WORK_TIME
 uint8_t workCount=0;
 #endif
 
-	uint8_t accelCalibFlag=0;
+	uint8_t accelCalibCompleteFlag=0;
+	uint8_t gyroCalibCompleteFlag=0;
+	uint8_t magCalibCompleteFlag=0;
 	float accelCalibVal[3]={0};
+	float gyroCalibVal[3]={0};
+	int16_t magnetometerMax[3]={94, 199, 156};
+	int16_t magnetometerMin[3]={-255, -200, -174};
+
 	float accelFiltered[3]={0};
 	float gyroRawRadPerSec[3] = {0};
-	uint8_t gyroCalibFlag=0;
-	float gyroCalibVal[3]={0};
 
 	extern volatile float roll, pitch, yaw;
 	const float accelFilterAlpha = 0.05;
@@ -83,7 +95,7 @@ uint8_t workCount=0;
 
 	while(1)
 	{
-    	if(!gyroCalibFlag)
+    	if(!gyroCalibCompleteFlag)
     	{
     		uart_printf("gyro calibration started\n");
     		if(gyro_calc_bias(gyroCalibVal)<0)
@@ -91,11 +103,11 @@ uint8_t workCount=0;
     			uart_printf("gyro calibration fail\n");
     			while(1);
     		}
-    		gyroCalibFlag = 1;
+    		gyroCalibCompleteFlag = 1;
     		vTaskDelay(10/portTICK_PERIOD_MS);
     	}
 
-    	if(!accelCalibFlag)
+    	if(!accelCalibCompleteFlag)
 		{
 			uart_printf("accel calibration started\n");
 			if(accel_calc_bias(accelCalibVal)<0)
@@ -104,10 +116,28 @@ uint8_t workCount=0;
 				while(1);
 			}
 			vTaskDelay(10/portTICK_PERIOD_MS);
-			accelCalibFlag = 1;
+			accelCalibCompleteFlag = 1;
 		}
 
-    	if((gyroCalibFlag == 1)&&(accelCalibFlag == 1))
+#if DO_AUTOMATIC_MAG_CALIB
+    	if(!magCalibCompleteFlag)
+		{
+    		uart_printf("start moving the magnetometer\n");
+			if(magnetometer_read_min_and_max_values(magnetometerMax, magnetometerMin) < 0)
+			{
+				uart_printf("mag error during calibration\n");
+				while(1);
+			}
+			uart_printf("magnetometer calibration complete\n");
+			vTaskDelay(10/portTICK_PERIOD_MS);
+			magCalibCompleteFlag = 1;
+		}
+#else
+    	magCalibCompleteFlag = 1;
+#endif
+
+    	if((gyroCalibCompleteFlag == 1)&&(accelCalibCompleteFlag == 1)&&
+    	   (magCalibCompleteFlag == 1))
     	{
 #if CALC_WORK_TIME
 if(workCount==0)
@@ -140,6 +170,7 @@ if(workCount==0)
     		gyroRawRadPerSec[Y_AXIS_INDEX] = convert_degrees_to_radians((float)gyroRawData[Y_AXIS_INDEX]);
     		gyroRawRadPerSec[Z_AXIS_INDEX] = convert_degrees_to_radians((float)gyroRawData[Z_AXIS_INDEX]);
 
+    		magnetometer_caliberate(magRawData, magnetometerMax, magnetometerMin);
 
 			for(j=0;j<5;j++)
 			{

@@ -53,6 +53,7 @@
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/quadcopter_project/FreeRTOS_Source/portable/GCC/ARM_CM3}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/${ProjName}/src/attitude_estimation}&quot;"/>
 									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/quadcopter_project/src/attitude_estimation/}&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${workspace_loc:/quadcopter_project/src/ext_peripherals}&quot;"/>
 								</option>
 								<option id="com.atollic.truestudio.common_options.target.endianess.873517420" name="Endianess" superClass="com.atollic.truestudio.common_options.target.endianess"/>
 								<option id="com.atollic.truestudio.common_options.target.mcpu.679783305" name="Microcontroller" superClass="com.atollic.truestudio.common_options.target.mcpu" value="STM32F100RB" valueType="enumerated"/>

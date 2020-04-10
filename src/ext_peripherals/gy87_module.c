@@ -304,7 +304,7 @@ int8_t accel_calc_bias(float* accelCalibData)
 int magnetometer_read_min_and_max_values(int16_t* magMax, int16_t* magMin)
 {
 	int16_t madData[3];
-	uint32_t maxSampleCount=200;
+	uint32_t maxSampleCount=400;
 
 	magMax[X_AXIS_INDEX]=0;
 	magMax[Y_AXIS_INDEX]=0;
