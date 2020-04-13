@@ -4,6 +4,8 @@
  * @author 	Arun Cheriyan
  */
 #include <math.h>
+#include <motion_control_algorithms/imu_utils.h>
+#include <motion_control_algorithms/MadgwickAHRS.h>
 #include "stm32f10x.h"
 #include "stm32f10x_rcc.h"
 #include "stm32f10x_gpio.h"
@@ -21,32 +23,47 @@
 #include "task.h"
 #include "queue.h"
 #include "timers.h"
-#include "attitude_estimation/MadgwickAHRS.h"
-#include "imu_utils.h"
 
 
 int16_t gyroRawData[3];
 int16_t accelRawData[3];
 int16_t magRawData[3];
 
+void bluetooth_cmd_task(void *pvParameters)
+{
+	uint16_t data=0;
+
+	uart_printf("listening for uart...\n");
+	while(1)
+	{
+		while(USART_GetFlagStatus(USART1, USART_FLAG_RXNE) == 0);
+		data = USART_ReceiveData(USART1);
+		uart_printf("data: %c\n", data);
+
+	}
+}
+
 void test_task(void *pvParameters)
 {
 	int8_t errorValue;
+	float pidOutput;
 
 	int16_t magMax[3];
 	int16_t magMin[3];
+	extern volatile float roll, pitch, yaw;
 
+	vTaskDelay(8000/portTICK_PERIOD_MS);
 	while(1)
 	{
-//		motor_pwm_speed_set(PWM_CHANNEL4, 4);
+//		servo_set_position(PWM_CHANNEL4, 0);
 //		delay_ms(1000);
-//		motor_pwm_speed_set(PWM_CHANNEL4, 14);
+//		servo_set_position(PWM_CHANNEL4, 180);
 //		delay_ms(1000);
 
-		servo_set_position(PWM_CHANNEL4, 0);
-		delay_ms(1000);
-		servo_set_position(PWM_CHANNEL4, 180);
-		delay_ms(1000);
+		pidOutput = pid_compute(roll, 0);
+		uart_printf("%.1f\n", pidOutput);
+		vTaskDelay(100/portTICK_PERIOD_MS);
+
 
 //		errorValue++;
 //		if(errorValue == 100000)
@@ -99,49 +116,50 @@ uint8_t workCount=0;
 	uint32_t i=0,j=0;
 	uint8_t magReadCount=0;
 
-	while(1)
-	{
-    	if(!gyroCalibCompleteFlag)
-    	{
-    		uart_printf("gyro calibration started\n");
-    		if(gyro_calc_bias(gyroCalibVal)<0)
-    		{
-    			uart_printf("gyro calibration fail\n");
-    			while(1);
-    		}
-    		gyroCalibCompleteFlag = 1;
-    		vTaskDelay(10/portTICK_PERIOD_MS);
-    	}
 
-    	if(!accelCalibCompleteFlag)
+	if(!gyroCalibCompleteFlag)
+	{
+		uart_printf("gyro calibration started\n");
+		if(gyro_calc_bias(gyroCalibVal)<0)
 		{
-			uart_printf("accel calibration started\n");
-			if(accel_calc_bias(accelCalibVal)<0)
-			{
-				uart_printf("accel calibration fail\n");
-				while(1);
-			}
-			vTaskDelay(10/portTICK_PERIOD_MS);
-			accelCalibCompleteFlag = 1;
+			uart_printf("gyro calibration fail\n");
+			while(1);
 		}
+		gyroCalibCompleteFlag = 1;
+		vTaskDelay(10/portTICK_PERIOD_MS);
+	}
+
+	if(!accelCalibCompleteFlag)
+	{
+		uart_printf("accel calibration started\n");
+		if(accel_calc_bias(accelCalibVal)<0)
+		{
+			uart_printf("accel calibration fail\n");
+			while(1);
+		}
+		vTaskDelay(10/portTICK_PERIOD_MS);
+		accelCalibCompleteFlag = 1;
+	}
 
 #if DO_AUTOMATIC_MAG_CALIB
-    	if(!magCalibCompleteFlag)
+	if(!magCalibCompleteFlag)
+	{
+		uart_printf("start moving the magnetometer\n");
+		if(magnetometer_read_min_and_max_values(magnetometerMax, magnetometerMin) < 0)
 		{
-    		uart_printf("start moving the magnetometer\n");
-			if(magnetometer_read_min_and_max_values(magnetometerMax, magnetometerMin) < 0)
-			{
-				uart_printf("mag error during calibration\n");
-				while(1);
-			}
-			uart_printf("magnetometer calibration complete\n");
-			vTaskDelay(10/portTICK_PERIOD_MS);
-			magCalibCompleteFlag = 1;
+			uart_printf("mag error during calibration\n");
+			while(1);
 		}
+		uart_printf("magnetometer calibration complete\n");
+		vTaskDelay(10/portTICK_PERIOD_MS);
+		magCalibCompleteFlag = 1;
+	}
 #else
-    	magCalibCompleteFlag = 1;
+	magCalibCompleteFlag = 1;
 #endif
 
+	while(1)
+	{
     	if((gyroCalibCompleteFlag == 1)&&(accelCalibCompleteFlag == 1)&&
     	   (magCalibCompleteFlag == 1))
     	{
@@ -198,7 +216,7 @@ if(workCount == 10)
 			i++;
 			if(i==20)
 			{
-				uart_printf("%.1f\n", convert_radians_to_degrees(yaw));
+//				uart_printf("%.1f\n", convert_radians_to_degrees(yaw));
 				i=0;
 			}
 
@@ -209,6 +227,8 @@ if(workCount == 10)
 
 void drone_init_task(void *pvParameters)
 {
+	int32_t errorCode=0;
+
 	timer3_init();
 	motors_pwm_init();
 	I2C_LowLevel_Init(400000, 0x38);
@@ -238,8 +258,11 @@ void drone_init_task(void *pvParameters)
 	{
 		uart_printf("drone init complete.\n");
 		vTaskDelay(2000/portTICK_PERIOD_MS);
-//		xTaskCreate(motion_control_task, "motion_control_task", 1000, NULL, 1, NULL );
-		xTaskCreate(test_task, "test_task", 500, NULL, 1, NULL );
+		errorCode = xTaskCreate(test_task, "test_task", 200, NULL, 1, NULL );
+		uart_printf("task1:%d\n", errorCode);
+		errorCode = xTaskCreate(motion_control_task, "motion_control_task", 500, NULL, 1, NULL );
+		uart_printf("task2:%d\n", errorCode);
+
 		vTaskDelete(NULL);
 	}
 }
@@ -247,6 +270,7 @@ void drone_init_task(void *pvParameters)
 int main(void)
 {
   	xTaskCreate(drone_init_task, "drone_init_task", 200, NULL, 0, NULL );
+  	xTaskCreate(bluetooth_cmd_task, "bluetooth command task", 200, NULL, 0, NULL );
 	vTaskStartScheduler();
 	while(1);
 

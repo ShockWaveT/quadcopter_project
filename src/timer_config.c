@@ -43,10 +43,11 @@ void TIM3_IRQHandler(void)
  **************************************************************************/
 void timer3_init(void)
 {
+	NVIC_InitTypeDef nvicStructure;
+
 	RCC_APB1PeriphClockCmd(RCC_APB1Periph_TIM3, ENABLE);
 
 	//configure timer 3 interrupt
-	NVIC_InitTypeDef nvicStructure;
 	nvicStructure.NVIC_IRQChannel = TIM3_IRQn;
 	nvicStructure.NVIC_IRQChannelPreemptionPriority = 0;
 	nvicStructure.NVIC_IRQChannelSubPriority = 1;
@@ -144,7 +145,7 @@ void motors_pwm_init(void)
  * @param speedPercentage: duty cycle in percentage value(0-100)
  * @return none.
  **************************************************************************/
-void motor_pwm_speed_set(pwm_channels_t channelID, float speedPercentage)
+void pwm_output_set(pwm_channels_t channelID, float speedPercentage)
 {
 	uint32_t pwm_value;
 

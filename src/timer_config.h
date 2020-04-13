@@ -23,7 +23,7 @@ typedef enum
 
 void timer3_init(void);
 void motors_pwm_init(void);
-void motor_pwm_speed_set(uint8_t channelID, float speedPercentage);
+void pwm_output_set(uint8_t channelID, float speedPercentage);
 uint32_t millis(void);
 void delay_ms(uint32_t delay_ms);
 uint8_t timeout_wait(uint32_t* timeoutVar, uint32_t timeOut_ms);

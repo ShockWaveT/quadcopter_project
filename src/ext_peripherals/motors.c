@@ -11,5 +11,5 @@
 void servo_set_position(pwm_channels_t channelID, float degreeVal)
 {
 	degreeVal = ((degreeVal*10)/180)+4;
-	motor_pwm_speed_set(channelID, degreeVal);
+	pwm_output_set(channelID, degreeVal);
 }

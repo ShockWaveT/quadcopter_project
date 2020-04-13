@@ -5,7 +5,8 @@
  */
 #include <math.h>
 #include "stm32f10x.h"
-#include "imu_utils.h"
+#include "motion_control_algorithms/imu_utils.h"
+#include "timer_config.h"
 
 
 /************************************************************************//*
@@ -58,3 +59,44 @@ float convert_radians_to_degrees(float radianVal)
 
 }
 
+
+float pid_compute(float input, float setPoint)
+{
+	float currentErr;
+	static float previousErr;
+
+	uint32_t currentTime;
+	static uint32_t previousTime;
+	float timeDifference;
+
+	const float kp=10, ki=0.1, kd=0.1;
+	const float maxOutput = 180;
+	const float minOutput = 0;
+
+	float output;
+	static float integralErr=0;
+	float differentialErr=0;
+
+	currentTime = millis();
+	timeDifference = currentTime-previousTime;
+	previousTime = currentTime;
+
+	currentErr = setPoint-input;
+
+	integralErr = integralErr+currentErr;
+	differentialErr = currentErr-previousErr;
+	previousErr = currentErr;
+
+	if(timeDifference>0)
+	{
+		output = (kp*currentErr) + (ki*integralErr*timeDifference) + ((kd*differentialErr)/timeDifference);
+
+		if(output>maxOutput)
+			output = maxOutput;
+
+		else if(output<minOutput)
+			output = minOutput;
+	}
+
+	return output;
+}
